@@ -140,7 +140,7 @@ export function handleWs(ws: WebSocket, user: { id: number; username: string } |
       if (!next) return send(ws, { t: "err", error: "Nước đi không hợp lệ." });
       r.state = next;
       r.moves.push(msg.move);
-      broadcast(r, { t: "state", room: r.id, state: adapter.encode(r.state), moves: r.moves.length });
+      broadcast(r, { t: "state", room: r.id, state: adapter.encode(r.state), moves: r.moves.length, last: msg.move });
 
       const res = adapter.result(r.state);
       if (res) {

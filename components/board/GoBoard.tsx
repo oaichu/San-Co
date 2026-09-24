@@ -14,7 +14,7 @@ export function GoBoard({
   disabled?: boolean;
 }) {
   return (
-    <div role="grid" aria-label="Bàn cờ vây 19 nhân 19" className="aspect-square w-full select-none rounded-xl border border-edge bg-surface p-[3%] shadow-lift">
+    <div role="grid" aria-label="Bàn cờ vây 19 nhân 19" className="mx-auto aspect-square w-full max-w-[620px] touch-manipulation select-none rounded-xl border border-edge bg-surface p-[3%] shadow-lift">
       <div className="grid h-full w-full" style={{ gridTemplateColumns: `repeat(${GO_N}, 1fr)` }}>
         {Array.from({ length: GO_N * GO_N }, (_, i) => {
           const r = Math.floor(i / GO_N);

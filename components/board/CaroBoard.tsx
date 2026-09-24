@@ -30,7 +30,7 @@ export function CaroBoard({
     <div
       role="grid"
       aria-label="Bàn cờ caro 15 nhân 15"
-      className="grid aspect-square w-full select-none grid-cols-15 rounded-xl border border-edge bg-surface p-[1.5%] shadow-lift"
+      className="mx-auto grid aspect-square w-full max-w-[620px] touch-manipulation select-none rounded-xl border border-edge bg-surface p-[1.5%] shadow-lift"
       style={{ gridTemplateColumns: `repeat(${CARO_N}, 1fr)` }}
     >
       {state.board.map((v, i) => {

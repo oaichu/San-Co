@@ -1,8 +1,10 @@
+import { Piece, type PieceType } from "./ChessPieces";
+
 export type GameId = "caro" | "chess" | "xiangqi" | "go";
 
 export const GAMES: { id: GameId; name: string; desc: string }[] = [
   { id: "caro", name: "Cờ caro", desc: "Năm quân một đường. Luật Việt: đúng năm mới thắng, chặn hai đầu vẫn cứu được." },
-  { id: "chess", name: "Cờ vua", desc: "64 ô, engine Stockfish chạy ngay trên máy bạn. Năm cấp độ, từ nhập môn tới cao thủ." },
+  { id: "chess", name: "Cờ vua", desc: "64 ô, AI alpha-beta chạy ngay trên máy bạn. Năm cấp độ, từ nhập môn tới cao thủ." },
   { id: "xiangqi", name: "Cờ tướng", desc: "Vượt sông, giữ thành. Bàn cờ quen thuộc nhất của người Việt, nay có AI đủ mạnh để luyện." },
   { id: "go", name: "Cờ vây", desc: "361 giao điểm, luật đơn giản nhất, chiều sâu lớn nhất. Học qua từng bàn 19 nhân 19 thật." },
 ];
@@ -34,34 +36,33 @@ export function CaroSkin() {
   );
 }
 
-const BACK_B = ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"];
-const BACK_W = ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"];
+const BACK: PieceType[] = ["r", "n", "b", "q", "k", "b", "n", "r"];
 
-/** Bàn cờ vua 8×8 tĩnh, thế trung cuộc */
+/** Bàn cờ vua 8×8 tĩnh, thế trung cuộc — cùng bộ quân SVG với bàn thật */
 export function ChessSkin() {
   return (
     <div className="grid h-full w-full grid-cols-8 overflow-hidden rounded-lg">
       {Array.from({ length: 64 }, (_, i) => {
         const r = Math.floor(i / 8), c = i % 8;
-        let p = "", enemy = false;
-        if (r === 0) { p = BACK_B[c]; enemy = true; }
-        if (r === 1) { p = "♟"; enemy = true; }
-        if (r === 6) p = "♙";
-        if (r === 7) p = BACK_W[c];
-        if (r === 4 && c === 4) { p = "♞"; enemy = true; }
-        if (r === 3 && c === 3) p = "♙";
+        let p: PieceType | null = null, enemy = false;
+        if (r === 0) { p = BACK[c]; enemy = true; }
+        if (r === 1) { p = "p"; enemy = true; }
+        if (r === 6) p = "p";
+        if (r === 7) p = BACK[c];
+        if (r === 4 && c === 4) { p = "n"; enemy = true; }
+        if (r === 3 && c === 3) p = "p";
         const light = (r + c) % 2 === 0;
         return (
           <div
             key={i}
             className="grid place-items-center"
-            style={{
-              fontSize: "clamp(16px, 3vw, 30px)",
-              color: enemy ? "var(--stone-x)" : "var(--ink)",
-              background: light ? "var(--chess-l)" : "var(--chess-d)",
-            }}
+            style={{ background: light ? "var(--chess-l)" : "var(--chess-d)" }}
           >
-            {p}
+            {p && (
+              <span className="block h-[86%] w-[86%]" style={{ filter: "drop-shadow(0 2px 2px rgba(20,12,4,.35))" }}>
+                <Piece t={p} c={enemy ? "b" : "w"} />
+              </span>
+            )}
           </div>
         );
       })}

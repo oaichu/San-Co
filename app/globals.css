@@ -222,6 +222,12 @@
     transform: scale(1.18);
   }
 }
+/* quân cờ vua trượt từ ô from → to (--dx/--dy tính theo % ô) */
+@keyframes piece-slide {
+  from {
+    transform: translate(var(--dx, 0), var(--dy, 0));
+  }
+}
 @keyframes soft-pulse {
   50% {
     opacity: 0.45;

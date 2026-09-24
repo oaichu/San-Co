@@ -119,7 +119,7 @@ function GameRoom({ ol }: { ol: ReturnType<typeof useOnline> }) {
           </div>
         )}
         <div className="mx-auto max-w-[640px]">
-          <BoardSwitch room={r} myTurn={myTurn} onMove={ol.move} />
+          <BoardSwitch room={r} myTurn={myTurn} flipped={r.seat === "p2"} onMove={ol.move} />
         </div>
       </div>
 
@@ -150,7 +150,7 @@ function GameRoom({ ol }: { ol: ReturnType<typeof useOnline> }) {
   );
 }
 
-function BoardSwitch({ room, myTurn, onMove }: { room: { game: GameId; state: unknown }; myTurn: boolean; onMove: (m: unknown) => void }) {
+function BoardSwitch({ room, myTurn, flipped, onMove }: { room: { game: GameId; state: unknown; lastMove?: { from: string; to: string } | null }; myTurn: boolean; flipped: boolean; onMove: (m: unknown) => void }) {
   const [sel, setSel] = useState<string | number | null>(null);
 
   if (room.game === "caro") {
@@ -165,6 +165,8 @@ function BoardSwitch({ room, myTurn, onMove }: { room: { game: GameId; state: un
         selected={sel as Square | null}
         targets={targets}
         disabled={!myTurn}
+        flipped={flipped}
+        lastMove={room.lastMove}
         onSquare={(sq) => {
           if (sel && targets.has(sq)) { onMove({ from: sel, to: sq }); setSel(null); return; }
           const p = g.get(sq);
@@ -183,6 +185,7 @@ function BoardSwitch({ room, myTurn, onMove }: { room: { game: GameId; state: un
         selected={sel as number | null}
         targets={targets}
         disabled={!myTurn}
+        flipped={flipped}
         onPoint={(i) => {
           if (sel != null && targets.has(i)) { onMove({ from: sel, to: i }); setSel(null); return; }
           const p = s.board[i];

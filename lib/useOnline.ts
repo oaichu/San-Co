@@ -14,6 +14,7 @@ export interface RoomSession {
   players: (string | undefined)[];
   result?: "p1" | "p2" | "draw";
   deltas?: { p1: number; p2: number };
+  lastMove?: { from: string; to: string } | null;
 }
 
 export function useOnline() {
@@ -37,7 +38,7 @@ export function useOnline() {
       if (m.t === "me") setMe(m.user);
       else if (m.t === "rooms") setRooms(m.rooms);
       else if (m.t === "joined") setRoom({ id: m.room, game: m.game, seat: m.seat, state: adapters[m.game as GameId].decode(m.state), players: m.players });
-      else if (m.t === "state") setRoom((r) => (r ? { ...r, state: adapters[r.game].decode(m.state) } : r));
+      else if (m.t === "state") setRoom((r) => (r ? { ...r, state: adapters[r.game].decode(m.state), lastMove: m.last ?? null } : r));
       else if (m.t === "end") setRoom((r) => (r ? { ...r, result: m.result, deltas: m.deltas, state: adapters[r.game].decode(m.state) } : r));
       else if (m.t === "start") setRoom((r) => (r ? { ...r, players: m.players } : r));
       else if (m.t === "err") setError(m.error);

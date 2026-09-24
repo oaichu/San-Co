@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 
@@ -13,6 +13,15 @@ export const metadata: Metadata = {
   title: "Sân Cờ — Sân cờ của người Việt",
   description:
     "Cờ vua, cờ tướng, cờ caro, cờ vây. Đấu với AI nhiều cấp độ, thi đấu xếp hạng ELO, học từng nước đi ngay trên bàn cờ.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4efe3" },
+    { media: "(prefers-color-scheme: dark)", color: "#14100b" },
+  ],
 };
 
 const themeInit = `try{var t=localStorage.getItem('sc-theme');if(!t)t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}`;

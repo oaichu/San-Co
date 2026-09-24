@@ -11,18 +11,21 @@ export function XiangqiBoard({
   targets,
   onPoint,
   disabled,
+  flipped,
 }: {
   state: XqState;
   selected: number | null;
   targets: Set<number>;
   onPoint?: (i: number) => void;
   disabled?: boolean;
+  /** xoay bàn 180° cho bên đen khi chơi online */
+  flipped?: boolean;
 }) {
   return (
     <div
       role="grid"
       aria-label="Bàn cờ tướng"
-      className="relative aspect-[9/10] w-full select-none rounded-xl border border-edge bg-surface p-[5.5%] shadow-lift"
+      className="relative mx-auto aspect-[9/10] w-full max-w-[560px] touch-manipulation select-none rounded-xl border border-edge bg-surface p-[5.5%] shadow-lift"
     >
       {/* cung tướng: đường chéo 2 cung (điểm (c,r) → x=c, y=r trong viewBox 8×9) */}
       <svg className="pointer-events-none absolute inset-[5.5%]" aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 8 9" style={{ width: "89%", height: "89%" }}>
@@ -32,9 +35,14 @@ export function XiangqiBoard({
         </g>
       </svg>
       <div className="grid h-full w-full" style={{ gridTemplateColumns: `repeat(${XQ_W}, 1fr)`, gridTemplateRows: `repeat(${XQ_H}, 1fr)` }}>
-        {Array.from({ length: XQ_W * XQ_H }, (_, i) => {
+        {Array.from({ length: XQ_W * XQ_H }, (_, disp) => {
+          const i = flipped ? XQ_W * XQ_H - 1 - disp : disp;
           const r = Math.floor(i / XQ_W);
           const c = i % XQ_W;
+          // khi lật bàn: hàng ngang nối về cột trái, hàng dọc nối lên trên, sông nằm ở r5
+          const hasRight = flipped ? c > 0 : c < XQ_W - 1;
+          const hasDown = flipped ? r > 0 : r < XQ_H - 1;
+          const riverEdge = flipped ? r === 5 : r === 4;
           const p = state.board[i];
           const col = p ? colorOf(p) : null;
           const isSel = selected === i;
@@ -51,8 +59,10 @@ export function XiangqiBoard({
             >
               {/* vạch kẻ */}
               <span className="pointer-events-none absolute inset-0" aria-hidden="true">
-                {c < XQ_W - 1 && <span className="absolute left-1/2 right-[-50%] top-1/2 h-px bg-line-2" />}
-                {r < XQ_H - 1 && !(r === 4 && c > 0 && c < XQ_W - 1) && <span className="absolute bottom-[-50%] left-1/2 top-1/2 w-px bg-line-2" />}
+                {hasRight && <span className={`absolute top-1/2 h-px bg-line-2 ${flipped ? "right-1/2 left-[-50%]" : "left-1/2 right-[-50%]"}`} />}
+                {hasDown && !(riverEdge && c > 0 && c < XQ_W - 1) && (
+                  <span className={`absolute left-1/2 w-px bg-line-2 ${flipped ? "top-[-50%] bottom-1/2" : "bottom-[-50%] top-1/2"}`} />
+                )}
               </span>
               {isTarget && !p && <span className="absolute left-1/2 top-1/2 h-[28%] w-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "color-mix(in srgb, var(--vermilion) 55%, transparent)" }} />}
               {p && (
