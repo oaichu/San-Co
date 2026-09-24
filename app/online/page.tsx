@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
-import { useOnline } from "@/lib/useOnline";
+import { useOnline, clockDisplay, type RoomSession } from "@/lib/useOnline";
+import { TIME_CONTROLS } from "@/lib/tournament";
 import { StatusLine } from "@/components/GamePanel";
 import { adapters, type GameId, type Seat } from "@/lib/games/registry";
 import { CaroBoard } from "@/components/board/CaroBoard";
@@ -25,6 +26,13 @@ export default function OnlinePage() {
       <Nav />
       <div className="mx-auto max-w-[1240px] px-5 pb-24 pt-[104px] md:px-11">
         {ol.room ? <GameRoom ol={ol} /> : <Lobby ol={ol} />}
+        {ol.tourNotice && (
+          <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-xl border border-vermilion bg-surface px-5 py-3 text-[13.5px] font-medium shadow-lift" role="status">
+            <span>Trận giải của bạn đã sẵn sàng.</span>
+            <button onClick={() => { ol.join(ol.tourNotice!.room); ol.clearTourNotice(); }} className="rounded-lg bg-vermilion px-4 py-1.5 font-semibold text-accent-ink transition-transform duration-150 active:scale-[0.97]">Vào trận</button>
+            <button onClick={ol.clearTourNotice} className="text-ink-3 underline underline-offset-2">Để sau</button>
+          </div>
+        )}
         {ol.error && (
           <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-vermilion bg-surface px-5 py-3 text-[13.5px] font-medium text-vermilion shadow-lift" role="alert">
             {ol.error}
@@ -38,6 +46,7 @@ export default function OnlinePage() {
 
 function Lobby({ ol }: { ol: ReturnType<typeof useOnline> }) {
   const [game, setGame] = useState<GameId>("caro");
+  const [tc, setTc] = useState("0");
   return (
     <div className="grid gap-[clamp(28px,4vw,56px)] lg:grid-cols-[1fr_360px]">
       <div>
@@ -55,11 +64,19 @@ function Lobby({ ol }: { ol: ReturnType<typeof useOnline> }) {
               </button>
             ))}
           </div>
+          <div className="mb-3 mt-6 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">Nhịp giờ</div>
+          <div className="flex flex-wrap gap-1.5">
+            {TIME_CONTROLS.map((t) => (
+              <button key={t.key} onClick={() => setTc(t.key)} className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-150 active:scale-[0.97] ${t.key === tc ? "border-vermilion bg-vermilion text-accent-ink" : "border-line-2 text-ink-2 hover:border-ink-2 hover:text-ink"}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
           <div className="mt-5 flex gap-2">
             {ol.me ? (
               <>
-                <button onClick={() => ol.quick(game)} className="rounded-xl bg-vermilion px-6 py-3 text-[14px] font-semibold text-accent-ink transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.97]">Tìm trận nhanh</button>
-                <button onClick={() => ol.create(game)} className="rounded-xl border border-line-2 px-6 py-3 text-[14px] font-semibold transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.97]">Tạo phòng</button>
+                <button onClick={() => ol.quick(game, tc)} className="rounded-xl bg-vermilion px-6 py-3 text-[14px] font-semibold text-accent-ink transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.97]">Tìm trận nhanh</button>
+                <button onClick={() => ol.create(game, tc)} className="rounded-xl border border-line-2 px-6 py-3 text-[14px] font-semibold transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.97]">Tạo phòng</button>
               </>
             ) : (
               <Link href="/dang-nhap" className="rounded-xl bg-vermilion px-6 py-3 text-[14px] font-semibold text-accent-ink transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.97]">Đăng nhập để chơi</Link>
@@ -80,7 +97,7 @@ function Lobby({ ol }: { ol: ReturnType<typeof useOnline> }) {
             {ol.rooms.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3 py-3.5">
                 <div className="min-w-0">
-                  <div className="text-[14px] font-semibold">{GAME_LABEL[r.game]}</div>
+                  <div className="text-[14px] font-semibold">{GAME_LABEL[r.game]}{r.tc && r.tc !== "0" && <span className="tabular ml-2 text-[11.5px] font-medium text-vermilion">{r.tc}</span>}</div>
                   <div className="truncate text-[12px] text-ink-3">{r.players.filter(Boolean).join(" vs ") || "đang chờ"} · {r.moves} nước</div>
                 </div>
                 {r.waiting ? (
@@ -126,10 +143,17 @@ function GameRoom({ ol }: { ol: ReturnType<typeof useOnline> }) {
 
       <aside className="self-start lg:sticky lg:top-[96px]">
         <div className="border-b border-line pb-5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">Ván đấu</div>
-          <div className="mt-2 space-y-1 text-[14px]">
-            <div className="flex justify-between"><span>{r.players[0] ?? "…"}</span><span className="text-ink-3">P1</span></div>
-            <div className="flex justify-between"><span>{r.players[1] ?? "…"}</span><span className="text-ink-3">P2</span></div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">Ván đấu{r.tc && r.tc !== "0" ? ` · ${r.tc}` : ""}</div>
+          <div className="mt-2 space-y-1.5 text-[14px]">
+            {(["p1", "p2"] as const).map((seat, i) => (
+              <div key={seat} className="flex items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate">{r.players[i] ?? "…"}</span>
+                  <Clock room={r} seat={seat} />
+                </span>
+                <span className="text-ink-3">{seat.toUpperCase()}</span>
+              </div>
+            ))}
           </div>
         </div>
         <StatusLine
@@ -155,6 +179,27 @@ function GameRoom({ ol }: { ol: ReturnType<typeof useOnline> }) {
         )}
       </aside>
     </div>
+  );
+}
+
+/** Đồng hồ thi đấu — tick 4 lần/giây khi ván còn chạy, đỏ khi dưới 10s. */
+function Clock({ room, seat }: { room: RoomSession; seat: "p1" | "p2" }) {
+  const hasClock = !!room.clock && !room.result;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!hasClock) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [hasClock, room.clock]);
+  // nếu snapshot mới hơn 'now' (vừa nhận clock từ server) thì dùng clockAt làm mốc
+  const ms = clockDisplay(room, seat, Math.max(now, room.clockAt ?? 0));
+  if (ms == null) return null;
+  const s = Math.ceil(ms / 1000);
+  const label = s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s}s`;
+  return (
+    <span className={`tabular text-[12.5px] font-semibold ${ms < 10_000 ? "text-vermilion" : "text-ink-3"}`}>
+      {label}
+    </span>
   );
 }
 

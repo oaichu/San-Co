@@ -3,6 +3,7 @@ import { WebSocketServer } from "ws";
 import next from "next";
 import { handleApi } from "./api";
 import { handleWs, sweepRooms } from "./rooms";
+import "./tour"; // đăng ký hook kết quả giải
 import { userByToken, cookieOf } from "./auth";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -42,6 +43,7 @@ app.prepare().then(() => {
   });
 
   setInterval(sweepRooms, 10 * 60_000).unref();
+  setInterval(sweepRooms, 1000).unref(); // bắt cờ hết giờ (sweep rẻ — chỉ loop Map)
 
   server.listen(port, () => {
     console.log(`Sân Cờ → http://localhost:${port} (${dev ? "dev" : "prod"})`);

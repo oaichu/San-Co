@@ -21,6 +21,7 @@ export function Logo() {
 const LINKS = [
   { href: "/choi", label: "Chơi" },
   { href: "/online", label: "Online" },
+  { href: "/giai-dau", label: "Giải đấu" },
   { href: "/hoc", label: "Học" },
   { href: "/puzzle", label: "Puzzle" },
   { href: "/ho-so", label: "Hồ sơ" },
@@ -45,7 +46,7 @@ export function Nav() {
         <Logo />
         <div className="flex items-center gap-3 md:gap-8">
           <div className="hidden items-center gap-6 md:flex">
-            {LINKS.slice(0, 4).map((l) => (
+            {LINKS.slice(0, 5).map((l) => (
               <Link key={l.href} href={l.href} className="text-sm font-medium text-ink-2 transition-colors duration-150 hover:text-ink">{l.label}</Link>
             ))}
           </div>

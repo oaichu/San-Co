@@ -34,6 +34,53 @@ export function newXiangqi(): XqState {
   return { board: XQ_INITIAL.slice(), turn: "r", winner: 0, lastMove: null, halfmove: 0, moves: [] };
 }
 
+/**
+ * FEN nội bộ: 10 hàng "/" ngăn cách, số = ô trống, HOA = đỏ, thường = đen,
+ * ký tự cuối = lượt ("r" đỏ / "b" đen). VD khai cục:
+ * "rheagaehr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RHEAGAEHR r"
+ */
+export function xqFromFen(fen: string): XqState | null {
+  const [placement, turn] = fen.trim().split(/\s+/);
+  const rows = placement.split("/");
+  if (rows.length !== XQ_H) return null;
+  const board: string[] = [];
+  for (const row of rows) {
+    let n = 0;
+    for (const ch of row) {
+      if (/\d/.test(ch)) {
+        const k = Number(ch);
+        for (let i = 0; i < k; i++) board.push("");
+        n += k;
+      } else if ("rheagcp".includes(ch.toLowerCase())) {
+        board.push(ch);
+        n++;
+      } else return null;
+    }
+    if (n !== XQ_W) return null;
+  }
+  if (board.length !== XQ_W * XQ_H) return null;
+  // mỗi bên phải còn tướng
+  if (!board.some((p) => p === "g") || !board.some((p) => p === "G")) return null;
+  const t = turn === "b" ? "b" : "r";
+  const s: XqState = { board, turn: t, winner: 0, lastMove: null, halfmove: 0, moves: [] };
+  return s;
+}
+
+export function xqToFen(s: XqState): string {
+  const rows = [];
+  for (let r = 0; r < XQ_H; r++) {
+    let row = "", empty = 0;
+    for (let c = 0; c < XQ_W; c++) {
+      const p = s.board[idx(r, c)];
+      if (!p) empty++;
+      else { if (empty) row += empty; empty = 0; row += p; }
+    }
+    if (empty) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join("/")} ${s.turn}`;
+}
+
 export const rc = (i: number) => [Math.floor(i / XQ_W), i % XQ_W] as const;
 export const idx = (r: number, c: number) => r * XQ_W + c;
 const inb = (r: number, c: number) => r >= 0 && r < XQ_H && c >= 0 && c < XQ_W;

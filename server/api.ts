@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import { q } from "./db";
 import { register, login, logout, userByToken, cookieOf, cookieHeader } from "./auth";
+import { listTours, tourDetail, createTour, joinTour, startTour } from "./tour";
 
 function json(res: ServerResponse, code: number, body: unknown, headers: Record<string, string> = {}) {
   res.writeHead(code, { "Content-Type": "application/json", ...headers });
@@ -109,6 +110,47 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
     q.puzzleAttempt.run(me.id, String(b.puzzleId ?? ""), b.solved ? 1 : 0);
     json(res, 200, { ok: true });
     return true;
+  }
+
+  if (p === "/api/tour" && req.method === "GET") {
+    json(res, 200, { tours: listTours() });
+    return true;
+  }
+
+  if (p === "/api/tour" && req.method === "POST") {
+    if (!me) return json(res, 401, { error: "Đăng nhập để tạo giải." }), true;
+    const b = await body(req);
+    const r = createTour(me.id, {
+      name: String(b.name ?? ""), game: String(b.game ?? ""),
+      format: String(b.format ?? ""), tc: String(b.tc ?? "0"),
+      maxPlayers: Number(b.maxPlayers ?? 8),
+    });
+    if (r.error) return json(res, 400, { error: r.error }), true;
+    json(res, 200, { id: r.id });
+    return true;
+  }
+
+  const tourMatch = p.match(/^\/api\/tour\/(\d+)(\/(join|start))?$/);
+  if (tourMatch) {
+    const id = Number(tourMatch[1]);
+    const action = tourMatch[3];
+    if (req.method === "GET" && !action) {
+      const d = tourDetail(id, me?.id);
+      if (!d) return json(res, 404, { error: "Giải không tồn tại." }), true;
+      json(res, 200, d);
+      return true;
+    }
+    if (!me) return json(res, 401, { error: "Chưa đăng nhập." }), true;
+    if (req.method === "POST" && action === "join") {
+      const r = joinTour(me.id, id);
+      json(res, r.ok ? 200 : 400, r);
+      return true;
+    }
+    if (req.method === "POST" && action === "start") {
+      const r = startTour(me.id, id);
+      json(res, r.ok ? 200 : 400, r);
+      return true;
+    }
   }
 
   if (p.startsWith("/api/")) {

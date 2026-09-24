@@ -57,6 +57,41 @@ CREATE TABLE IF NOT EXISTS lesson_progress (
   completed_at INTEGER NOT NULL DEFAULT (unixepoch()),
   PRIMARY KEY (user_id, lesson_id)
 );
+CREATE TABLE IF NOT EXISTS tournaments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  game TEXT NOT NULL,
+  format TEXT NOT NULL,            -- ko | rr | swiss
+  tc_key TEXT NOT NULL DEFAULT '0',
+  max_players INTEGER NOT NULL DEFAULT 8,
+  total_rounds INTEGER NOT NULL DEFAULT 0,
+  current_round INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'open',  -- open | running | done
+  created_by INTEGER NOT NULL REFERENCES users(id),
+  winner INTEGER REFERENCES users(id),
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE TABLE IF NOT EXISTS tour_players (
+  tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score REAL NOT NULL DEFAULT 0,
+  buchholz REAL NOT NULL DEFAULT 0,
+  had_bye INTEGER NOT NULL DEFAULT 0,
+  alive INTEGER NOT NULL DEFAULT 1,     -- KO: bị loại = 0
+  joined_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (tournament_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS tour_games (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournament_id INTEGER NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  round INTEGER NOT NULL,
+  p1 INTEGER NOT NULL REFERENCES users(id),
+  p2 INTEGER REFERENCES users(id),      -- NULL = bye
+  result TEXT,                          -- 'p1'|'p2'|'draw'|NULL đang chơi
+  room_id TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS tour_games_t ON tour_games(tournament_id);
 `);
 
 export interface UserRow { id: number; username: string; pass_hash: string; created_at: number }
@@ -81,6 +116,24 @@ export const q = {
   leaderboard: db.prepare(`SELECT r.game, r.rating, r.wins, r.losses, r.draws, u.username
     FROM ratings r JOIN users u ON u.id = r.user_id
     WHERE r.game = ? ORDER BY r.rating DESC LIMIT 20`),
+  createTour: db.prepare("INSERT INTO tournaments (name, game, format, tc_key, max_players, total_rounds, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)"),
+  tourById: db.prepare("SELECT * FROM tournaments WHERE id = ?"),
+  tourList: db.prepare(`SELECT t.*, u.username AS creator, (SELECT COUNT(*) FROM tour_players tp WHERE tp.tournament_id = t.id) AS players
+    FROM tournaments t JOIN users u ON u.id = t.created_by ORDER BY t.id DESC LIMIT 50`),
+  tourSetStatus: db.prepare("UPDATE tournaments SET status = ?, current_round = ? WHERE id = ?"),
+  tourSetWinner: db.prepare("UPDATE tournaments SET status = 'done', winner = ? WHERE id = ?"),
+  joinTour: db.prepare("INSERT OR IGNORE INTO tour_players (tournament_id, user_id) VALUES (?, ?)"),
+  tourPlayers: db.prepare(`SELECT tp.*, u.username FROM tour_players tp JOIN users u ON u.id = tp.user_id
+    WHERE tp.tournament_id = ? ORDER BY tp.score DESC, tp.buchholz DESC, u.username`),
+  tourPlayer: db.prepare("SELECT * FROM tour_players WHERE tournament_id = ? AND user_id = ?"),
+  tourSetScore: db.prepare("UPDATE tour_players SET score = ?, buchholz = ?, had_bye = ?, alive = ? WHERE tournament_id = ? AND user_id = ?"),
+  addTourGame: db.prepare("INSERT INTO tour_games (tournament_id, round, p1, p2, result, room_id) VALUES (?, ?, ?, ?, ?, ?)"),
+  tourGames: db.prepare(`SELECT tg.*, u1.username AS p1_name, u2.username AS p2_name FROM tour_games tg
+    JOIN users u1 ON u1.id = tg.p1 LEFT JOIN users u2 ON u2.id = tg.p2
+    WHERE tg.tournament_id = ? ORDER BY tg.round, tg.id`),
+  tourGameByRoom: db.prepare("SELECT * FROM tour_games WHERE room_id = ?"),
+  tourPendingGames: db.prepare("SELECT * FROM tour_games WHERE tournament_id = ? AND round = ? AND result IS NULL"),
+  setTourGameResult: db.prepare("UPDATE tour_games SET result = ? WHERE id = ?"),
   markLesson: db.prepare("INSERT OR IGNORE INTO lesson_progress (user_id, lesson_id) VALUES (?, ?)"),
   lessonDone: db.prepare("SELECT lesson_id FROM lesson_progress WHERE user_id = ?"),
   puzzleAttempt: db.prepare("INSERT OR REPLACE INTO puzzle_attempts (user_id, puzzle_id, solved) VALUES (?, ?, ?)"),

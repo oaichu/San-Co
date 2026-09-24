@@ -1,6 +1,6 @@
 import { Chess } from "chess.js";
 import { newCaro, applyMove, type CaroState } from "./caro/rules";
-import { newXiangqi, applyXqMove, type XqState, type XqMove } from "./xiangqi/rules";
+import { newXiangqi, applyXqMove, xqFromFen, type XqState, type XqMove } from "./xiangqi/rules";
 import { newGo, applyGoMove, scoreGo, type GoState } from "./go/rules";
 
 export type GameId = "caro" | "chess" | "xiangqi" | "go";
@@ -53,7 +53,15 @@ export const xiangqiAdapter: GameAdapter<XqState, XqMove> = {
   init: newXiangqi,
   apply: (s, m) => applyXqMove(s, m),
   encode: (s) => s,
-  decode: (r) => r as XqState,
+  decode: (r) => {
+    const raw = r as XqState & { fen?: string };
+    if (raw.fen) {
+      const s = xqFromFen(raw.fen);
+      if (!s) throw new Error(`xiangqi fen bất hợp lệ: ${raw.fen}`);
+      return s;
+    }
+    return raw;
+  },
   result: (s) => (s.winner === "r" ? "p1" : s.winner === "b" ? "p2" : s.winner === -1 ? "draw" : null),
   seatToMove: (s) => (s.turn === "r" ? "p1" : "p2"),
 };
