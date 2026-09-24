@@ -78,6 +78,8 @@
   --shadow-lg: 0 18px 50px -16px rgba(80, 50, 20, 0.28), 0 4px 14px rgba(80, 50, 20, 0.12);
   --stone-x: #c7431e;
   --stone-o: #26201a;
+  --go-b: #26201a;
+  --go-w: #f2ebdb;
   --chess-l: #ede4cf;
   --chess-d: #b79f7d;
 
@@ -127,6 +129,8 @@
   --shadow-lg: 0 18px 50px -12px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.4);
   --stone-x: #e0552f;
   --stone-o: #efe7d8;
+  --go-b: #211c15;
+  --go-w: #ece3d0;
   --chess-l: #4a3f30;
   --chess-d: #2b2318;
 
