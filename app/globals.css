@@ -82,6 +82,13 @@
   --go-w: #f2ebdb;
   --chess-l: #ede4cf;
   --chess-d: #b79f7d;
+  /* gỗ goban / bàn tướng */
+  --wood-1: #e4bc7c;
+  --wood-2: #cfa160;
+  --wood-line: rgba(64, 40, 14, 0.78);
+  /* quân tướng: đĩa kem + chữ son/mực — cố định cả 2 theme */
+  --xq-red: #b3351f;
+  --xq-ink: #2b2016;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -133,6 +140,9 @@
   --go-w: #ece3d0;
   --chess-l: #4a3f30;
   --chess-d: #2b2318;
+  --wood-1: #b8945f;
+  --wood-2: #96713f;
+  --wood-line: rgba(38, 24, 8, 0.8);
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -226,6 +236,15 @@
 @keyframes piece-slide {
   from {
     transform: translate(var(--dx, 0), var(--dy, 0));
+  }
+}
+/* nét X/O vẽ tay + đường thắng caro */
+@keyframes draw-in {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 @keyframes soft-pulse {

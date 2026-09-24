@@ -1,4 +1,5 @@
 import { Piece, type PieceType } from "./ChessPieces";
+import { MarkX, MarkO } from "./CaroBoard";
 
 export type GameId = "caro" | "chess" | "xiangqi" | "go";
 
@@ -15,23 +16,23 @@ export function CaroSkin() {
     "3,3": "x", "3,4": "x", "3,5": "x", "3,6": "x",
     "4,4": "o", "4,5": "o", "5,3": "o", "2,6": "o", "5,5": "o", "6,2": "x",
   };
-  const win = new Set(["3,3", "3,4", "3,5", "3,6"]);
   return (
-    <div className="grid h-full w-full grid-cols-9 p-[5%]">
-      {Array.from({ length: 81 }, (_, i) => {
-        const r = Math.floor(i / 9), c = i % 9;
-        const s = stones[`${r},${c}`];
-        return (
-          <div key={i} className={`relative ${c < 8 ? "border-r border-line" : ""} ${r < 8 ? "border-b border-line" : ""}`}>
-            {s && (
-              <span
-                className={`absolute inset-[15%] rounded-full ${s === "x" ? "bg-stone-x" : "bg-stone-o"}`}
-                style={win.has(`${r},${c}`) ? { outline: "2px solid var(--vermilion)", outlineOffset: 2 } : undefined}
-              />
-            )}
-          </div>
-        );
-      })}
+    <div className="relative h-full w-full p-[5%]">
+      <div className="grid h-full w-full grid-cols-9">
+        {Array.from({ length: 81 }, (_, i) => {
+          const r = Math.floor(i / 9), c = i % 9;
+          const s = stones[`${r},${c}`];
+          return (
+            <div key={i} className={`relative ${c < 8 ? "border-r border-line" : ""} ${r < 8 ? "border-b border-line" : ""}`}>
+              {s && <span className="absolute inset-0">{s === "x" ? <MarkX faint /> : <MarkO faint />}</span>}
+            </div>
+          );
+        })}
+      </div>
+      {/* đường thắng */}
+      <svg className="pointer-events-none absolute inset-[5%]" viewBox="0 0 9 9" aria-hidden="true">
+        <line x1="3.5" y1="3.5" x2="3.5" y2="6.5" stroke="var(--vermilion)" strokeWidth="0.18" strokeLinecap="round" opacity="0.85" />
+      </svg>
     </div>
   );
 }
@@ -80,7 +81,7 @@ const XQ_SETUP: Record<string, string> = {
 /** Bàn cờ tướng 9×10 tĩnh, quân tròn chữ Hán */
 export function XiangqiSkin() {
   return (
-    <div className="grid h-full w-full grid-cols-9 grid-rows-10 p-[4%]">
+    <div className="grid h-full w-full grid-cols-9 grid-rows-10 rounded-lg p-[4%]" style={{ background: "linear-gradient(160deg, var(--wood-1), var(--wood-2))" }}>
       {Array.from({ length: 90 }, (_, i) => {
         const r = Math.floor(i / 9), c = i % 9;
         const ch = XQ_SETUP[`${r},${c}`];
@@ -89,11 +90,13 @@ export function XiangqiSkin() {
           <div key={i} className="relative grid place-items-center">
             {ch && (
               <span
-                className="grid aspect-square w-[78%] place-items-center rounded-full border-[1.5px] border-line-2 bg-surface-2 font-semibold"
+                className="relative grid aspect-square w-[80%] place-items-center rounded-full font-semibold"
                 style={{
                   fontSize: "clamp(11px, 1.6vw, 17px)",
-                  color: red ? "var(--vermilion)" : "var(--ink)",
-                  boxShadow: "0 3px 8px -2px rgba(0,0,0,.35), inset 0 1px 0 var(--edge)",
+                  color: red ? "var(--xq-red)" : "var(--xq-ink)",
+                  background: "radial-gradient(circle at 36% 28%, #faf0d6 0%, #ecd9ac 62%, #d8bd8a 100%)",
+                  border: `1.5px solid ${red ? "var(--xq-red)" : "var(--xq-ink)"}`,
+                  boxShadow: "0 3px 8px -2px rgba(30,18,4,.45), inset 0 1px 0 rgba(255,252,240,.6)",
                 }}
               >
                 {ch}
@@ -113,19 +116,19 @@ export function GoSkin() {
     "6,7": "w", "7,6": "w", "7,7": "b", "4,4": "b", "10,10": "w", "2,10": "b",
   };
   return (
-    <div className="grid h-full w-full p-[4%]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
+    <div className="grid h-full w-full rounded-lg p-[4%]" style={{ gridTemplateColumns: "repeat(13, 1fr)", background: "linear-gradient(155deg, var(--wood-1), var(--wood-2))" }}>
       {Array.from({ length: 169 }, (_, i) => {
         const r = Math.floor(i / 13), c = i % 13;
         const s = stones[`${r},${c}`];
         return (
-          <div key={i} className={`relative ${c < 12 ? "border-r border-line" : ""} ${r < 12 ? "border-b border-line" : ""}`}>
+          <div key={i} className={`relative ${c < 12 ? "border-r" : ""} ${r < 12 ? "border-b" : ""}`} style={{ borderColor: "rgba(64,40,14,.5)" }}>
             {s && (
               <span
-                className="absolute inset-[12%] rounded-full"
+                className="absolute inset-[10%] rounded-full"
                 style={
                   s === "b"
-                    ? { background: "#17120c", boxShadow: "inset -2px -3px 5px rgba(255,255,255,.12), 0 3px 6px rgba(0,0,0,.4)" }
-                    : { background: "#f0eadb", boxShadow: "inset -2px -3px 5px rgba(0,0,0,.14), 0 3px 6px rgba(0,0,0,.22)" }
+                    ? { background: "radial-gradient(circle at 33% 27%, #5a5044 0%, #2e2619 42%, #120d07 78%)", boxShadow: "0 3px 6px -1px rgba(20,10,0,.5)" }
+                    : { background: "radial-gradient(circle at 33% 27%, #fffdf4 0%, #f0e7d0 55%, #cbbc9c 100%)", boxShadow: "0 3px 6px -1px rgba(20,10,0,.35)" }
                 }
               />
             )}
