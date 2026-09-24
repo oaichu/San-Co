@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // vendored skill assets — không phải code của app
+    ".agents/**",
+    ".devin/**",
   ]),
 ]);
 

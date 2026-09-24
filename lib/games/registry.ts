@@ -29,13 +29,17 @@ export const caroAdapter: GameAdapter<CaroState, number> = {
   seatToMove: (s) => (s.turn === 1 ? "p1" : "p2"),
 };
 
-export const chessAdapter: GameAdapter<Chess, { from: string; to: string; promotion?: string }> = {
+export const chessAdapter: GameAdapter<Chess, { from: string; to: string; promotion?: string } | string> = {
   id: "chess",
   init: () => new Chess(),
   apply: (s, m) => {
     const g = new Chess(s.fen());
-    const r = g.move({ from: m.from, to: m.to, promotion: m.promotion ?? "q" });
-    return r ? g : null;
+    try {
+      const r = typeof m === "string" ? g.move(m) : g.move({ from: m.from, to: m.to, promotion: m.promotion ?? "q" });
+      return r ? g : null;
+    } catch {
+      return null;
+    }
   },
   encode: (s) => ({ fen: s.fen() }),
   decode: (r) => new Chess((r as { fen: string }).fen),
@@ -68,9 +72,10 @@ export const goAdapter: GameAdapter<GoState, number> = {
   seatToMove: (s) => (s.turn === 1 ? "p1" : "p2"),
 };
 
-export const adapters: Record<GameId, GameAdapter<never, never>> = {
-  caro: caroAdapter as never,
-  chess: chessAdapter as never,
-  xiangqi: xiangqiAdapter as never,
-  go: goAdapter as never,
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const adapters: Record<GameId, GameAdapter<any, any>> = {
+  caro: caroAdapter,
+  chess: chessAdapter,
+  xiangqi: xiangqiAdapter,
+  go: goAdapter,
 };

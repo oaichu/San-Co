@@ -30,6 +30,19 @@ function roomInfo(r: Room) {
   return { id: r.id, game: r.game, waiting: !(r.p1 && r.p2), players: [r.p1?.username, r.p2?.username], moves: r.moves.length, createdAt: r.createdAt };
 }
 
+/** Dọn phòng treo: chờ quá 30 phút hoặc không nước nào > 2 giờ. Gọi định kỳ từ server. */
+export function sweepRooms() {
+  const now = Date.now();
+  for (const r of rooms.values()) {
+    const waiting = !(r.p1 && r.p2);
+    const stale = now - r.createdAt > (waiting ? 30 * 60_000 : 2 * 3600_000);
+    if (stale && !adapterResult(r)) {
+      broadcast(r, { t: "end", room: r.id, result: null, deltas: null, state: adapters[r.game].encode(r.state) });
+      rooms.delete(r.id);
+    }
+  }
+}
+
 export function broadcastLobby() {
   const list = [...rooms.values()].filter((r) => !(r.p1 && r.p2) || r.moves.length < 3).map(roomInfo);
   for (const ws of socketRoom.keys()) if (socketRoom.get(ws) === "lobby") send(ws, { t: "rooms", rooms: list });

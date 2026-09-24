@@ -8,7 +8,7 @@ export const LEVELS = ["Người mới", "Dễ", "Trung bình", "Khó", "Cao th�
 
 export function useXiangqiGame() {
   const [state, setState] = useState<XqState>(newXiangqi);
-  const [history, setHistory] = useState<XqState[]>([]);
+  const [, setHistory] = useState<XqState[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [level, setLevel] = useState(2);
   const [thinking, setThinking] = useState(false);

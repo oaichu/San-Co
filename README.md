@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sân Cờ
 
-## Getting Started
+Sân chơi cờ trực tuyến cho cộng đồng — cờ caro, cờ vua, cờ tướng, cờ vây. Chơi với máy 5 cấp độ, đấu online có ELO, giáo trình tương tác và puzzle. Tự host hoàn toàn, không phụ thuộc dịch vụ trả phí.
 
-First, run the development server:
+## Chạy bằng Docker (khuyến nghị)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose up -d --build
+# mở http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Một container duy nhất chứa Next.js + WebSocket + SQLite. Dữ liệu nằm trong volume `san-co-data` (`/app/data`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Chạy thủ công
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm ci
+npm run build
+npm start        # NODE_ENV=production tsx server/index.ts
+```
 
-## Learn More
+Dev mode: `npm run dev`. Test: `npm test`. Lint: `npm run lint`.
 
-To learn more about Next.js, take a look at the following resources:
+## Biến môi trường
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Biến | Mặc định | Mô tả |
+|---|---|---|
+| `PORT` | `3000` | Cổng HTTP + WS |
+| `SC_DB` | `./data/san-co.db` | Đường dẫn file SQLite |
+| `SC_SECURE_COOKIE` | `0` | Đặt `1` khi chạy sau reverse proxy HTTPS (thêm `Secure` vào cookie phiên) |
+| `NODE_ENV` | — | `production` khi chạy `npm start` |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Kiến trúc
 
-## Deploy on Vercel
+```
+app/            Next.js App Router — landing, /choi/*, /online, /hoc, /puzzle, /ho-so
+components/     board components, landing, learn widgets, Nav, LiquidCanvas
+lib/games/      engine 4 game + AI + adapter registry (dùng chung client & server)
+lib/content/    giáo trình + puzzle (được test validate bằng chính engine)
+server/         custom Node server: api.ts (REST), rooms.ts (WS), auth.ts, db.ts (SQLite)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Online**: WebSocket `/ws`, server validate mọi nước đi qua `lib/games/registry`, ELO cập nhật qua SQL khi ván kết thúc.
+- **Auth**: username/password, bcrypt, session cookie `HttpOnly; SameSite=Lax`, 30 ngày.
+- **Health check**: `GET /api/health` → `{"ok":true}`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Sau reverse proxy HTTPS
+
+Đặt `SC_SECURE_COOKIE=1` và đảm bảo proxy forward WebSocket (ví dụ nginx: `proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade";`).

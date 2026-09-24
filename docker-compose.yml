@@ -1,0 +1,15 @@
+services:
+  san-co:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # Bật khi chạy sau reverse proxy có HTTPS (nginx/caddy/traefik)
+      SC_SECURE_COOKIE: "0"
+      # SC_DB: /app/data/san-co.db  # mặc định
+    volumes:
+      - san-co-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  san-co-data:

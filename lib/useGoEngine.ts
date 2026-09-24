@@ -8,7 +8,7 @@ export const LEVELS = ["Người mới", "Dễ", "Trung bình", "Khó", "Cao th�
 
 export function useGoGame() {
   const [state, setState] = useState<GoState>(newGo);
-  const [history, setHistory] = useState<GoState[]>([]);
+  const [, setHistory] = useState<GoState[]>([]);
   const [level, setLevel] = useState(2);
   const [thinking, setThinking] = useState(false);
   const busy = useRef(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BoardSkin, GAMES, type GameId } from "../board/skins";
+import { BoardSkin, GAMES } from "../board/skins";
 
 /** Sticky scroll section: cuộn để lướt qua 4 sân cờ, board wipe bằng clip-path */
 export function Cycler() {

@@ -23,7 +23,10 @@ export function LiquidCanvas({ intensity = 1 }: { intensity?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const { theme } = useTheme();
   const themeRef = useRef(theme);
-  themeRef.current = theme;
+
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
 
   useEffect(() => {
     const cv = ref.current;

@@ -19,7 +19,7 @@ describe("go rules", () => {
   });
 
   it("cấm tự sát", () => {
-    let s = newGo();
+    const s = newGo();
     // dựng: đen vây kín ô (1,1) trừ chính nó; trắng đặt vào = tự sát
     const b = new Array(GO_N * GO_N).fill(0);
     b[at(0, 1)] = b[at(1, 0)] = b[at(1, 2)] = b[at(2, 1)] = 1;

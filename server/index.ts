@@ -2,7 +2,7 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import next from "next";
 import { handleApi } from "./api";
-import { handleWs } from "./rooms";
+import { handleWs, sweepRooms } from "./rooms";
 import { userByToken, cookieOf } from "./auth";
 
 const dev = process.env.NODE_ENV !== "production";
@@ -22,10 +22,26 @@ app.prepare().then(() => {
     }
   });
 
-  const wss = new WebSocketServer({ server, path: "/ws" });
+  const wss = new WebSocketServer({
+    server,
+    path: "/ws",
+    maxPayload: 16 * 1024,
+    verifyClient: (info, cb) => {
+      // chống cross-site WS hijacking: nếu có Origin thì phải cùng host
+      const origin = info.req.headers.origin;
+      if (!origin) return cb(true);
+      try {
+        cb(new URL(origin).host === info.req.headers.host);
+      } catch {
+        cb(false);
+      }
+    },
+  });
   wss.on("connection", (ws, req) => {
     handleWs(ws, userByToken(cookieOf(req)));
   });
+
+  setInterval(sweepRooms, 10 * 60_000).unref();
 
   server.listen(port, () => {
     console.log(`Sân Cờ → http://localhost:${port} (${dev ? "dev" : "prod"})`);

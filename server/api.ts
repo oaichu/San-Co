@@ -7,21 +7,45 @@ function json(res: ServerResponse, code: number, body: unknown, headers: Record<
   res.end(JSON.stringify(body));
 }
 
+const BODY_CAP = 16 * 1024;
+
 function body(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
     let d = "";
-    req.on("data", (c) => (d += c));
+    let over = false;
+    req.on("data", (c) => {
+      d += c;
+      if (d.length > BODY_CAP && !over) { over = true; resolve({}); req.destroy(); }
+    });
     req.on("end", () => {
+      if (over) return;
       try { resolve(JSON.parse(d || "{}")); } catch { resolve({}); }
     });
   });
+}
+
+// rate limit đơn giản cho auth endpoints: 10 req/phút/IP
+const authHits = new Map<string, number[]>();
+function authLimited(req: IncomingMessage): boolean {
+  const ip = req.socket.remoteAddress ?? "?";
+  const now = Date.now();
+  const hits = (authHits.get(ip) ?? []).filter((t) => now - t < 60_000);
+  hits.push(now);
+  authHits.set(ip, hits);
+  return hits.length > 10;
 }
 
 export async function handleApi(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   const p = url.pathname;
   const me = userByToken(cookieOf(req));
 
+  if (p === "/api/health") {
+    json(res, 200, { ok: true });
+    return true;
+  }
+
   if (p === "/api/register" && req.method === "POST") {
+    if (authLimited(req)) return json(res, 429, { error: "Quá nhiều yêu cầu. Thử lại sau." }), true;
     const b = await body(req);
     const r = register(String(b.username ?? ""), String(b.password ?? ""));
     if (!r.ok) return json(res, 400, { error: r.error }), true;
@@ -32,6 +56,7 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
   }
 
   if (p === "/api/login" && req.method === "POST") {
+    if (authLimited(req)) return json(res, 429, { error: "Quá nhiều yêu cầu. Thử lại sau." }), true;
     const b = await body(req);
     const l = login(String(b.username ?? ""), String(b.password ?? ""));
     if (!l.ok) return json(res, 401, { error: l.error }), true;

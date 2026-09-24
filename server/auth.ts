@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { db, q, type UserRow } from "./db";
+import { q, type UserRow } from "./db";
 
 export const COOKIE = "sc_session";
 const SESSION_DAYS = 30;
@@ -42,5 +42,6 @@ export function cookieOf(req: { headers: { cookie?: string } }): string | undefi
 }
 
 export function cookieHeader(token: string, maxAge: number) {
-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  const secure = process.env.SC_SECURE_COOKIE === "1" ? "; Secure" : "";
+  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }
