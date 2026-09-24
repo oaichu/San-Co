@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { useOnline } from "@/lib/useOnline";
+import { StatusLine } from "@/components/GamePanel";
 import { adapters, type GameId, type Seat } from "@/lib/games/registry";
 import { CaroBoard } from "@/components/board/CaroBoard";
 import { ChessBoard } from "@/components/board/ChessBoard";
@@ -130,11 +131,18 @@ function GameRoom({ ol }: { ol: ReturnType<typeof useOnline> }) {
             <div className="flex justify-between"><span>{r.players[0] ?? "…"}</span><span className="text-ink-3">P1</span></div>
             <div className="flex justify-between"><span>{r.players[1] ?? "…"}</span><span className="text-ink-3">P2</span></div>
           </div>
-          <div className="mt-3 text-[13px] text-ink-2">
-            {r.seat === "spec" ? "Bạn đang xem ván này." : `Bạn là ${SEAT_LABEL[r.seat as Seat]}.`}
-            {r.result ? <span className="mt-1 block font-display text-[18px] font-semibold text-vermilion">{status} {delta != null && <span className="tabular text-[14px]">({delta > 0 ? "+" : ""}{delta} ELO)</span>}</span> : myTurn ? "Tới lượt bạn." : "Lượt đối thủ."}
-          </div>
         </div>
+        <StatusLine
+          text={r.result ? status : waiting ? "Đang chờ đối thủ." : myTurn ? "Tới lượt bạn." : "Lượt đối thủ."}
+          over={!!r.result}
+          stone={r.seat === "spec" ? undefined : r.seat === "p1" ? "var(--stone-x)" : "var(--stone-o)"}
+          sub={
+            <p className="mt-1.5 text-[12.5px] text-ink-3">
+              {r.seat === "spec" ? "Bạn đang xem ván này." : `Bạn là ${SEAT_LABEL[r.seat as Seat]}.`}
+              {r.result && delta != null && <span className="tabular ml-1 font-semibold text-vermilion">({delta > 0 ? "+" : ""}{delta} ELO)</span>}
+            </p>
+          }
+        />
         {r.seat !== "spec" && !r.result && (
           <div className="border-b border-line py-5">
             <button onClick={ol.resign} className="w-full rounded-lg border border-line-2 py-2.5 text-[13.5px] font-semibold text-ink-2 transition-all duration-150 hover:border-vermilion hover:text-vermilion active:scale-[0.97]">Đầu hàng</button>
