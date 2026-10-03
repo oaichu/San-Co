@@ -8,6 +8,16 @@ import { getLesson, lessonsByGame } from "@/lib/content/lessons";
 import { Md } from "@/components/learn/md";
 import { DemoBoard, TryBoard } from "@/components/learn/LessonBoard";
 
+const LS_KEY = "san-co-lessons-done";
+
+function saveLocal(id: string) {
+  try {
+    const arr = new Set(JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as string[]);
+    arr.add(id);
+    localStorage.setItem(LS_KEY, JSON.stringify([...arr]));
+  } catch { /* localStorage có thể bị tắt */ }
+}
+
 export default function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const lesson = getLesson(id);
@@ -16,10 +26,12 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
   const siblings = lessonsByGame(lesson.game);
   const idx = siblings.findIndex((l) => l.id === id);
+  const prev = siblings[idx - 1];
   const next = siblings[idx + 1];
 
   const markDone = async () => {
     setCompleted(true);
+    saveLocal(id);
     fetch("/api/lesson/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,18 +58,23 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
           })}
         </div>
 
-        <div className="mt-12 flex items-center justify-between border-t border-line-2 pt-8">
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line-2 pt-8">
+          {prev ? (
+            <Link href={`/hoc/${prev.id}`} className="text-[14px] font-semibold text-ink-2 underline-offset-4 hover:text-ink hover:underline">
+              ← Bài trước: {prev.title}
+            </Link>
+          ) : <span />}
           <button
             onClick={markDone}
             className={`rounded-xl px-6 py-3 text-[14px] font-semibold transition-all duration-150 active:scale-[0.97] ${completed ? "border border-vermilion text-vermilion" : "bg-vermilion text-accent-ink hover:-translate-y-0.5"}`}
           >
             {completed ? "✓ Đã hoàn thành" : "Đánh dấu hoàn thành"}
           </button>
-          {next && (
+          {next ? (
             <Link href={`/hoc/${next.id}`} className="text-[14px] font-semibold text-vermilion underline-offset-4 hover:underline">
               Bài tiếp: {next.title} →
             </Link>
-          )}
+          ) : <span />}
         </div>
       </article>
     </main>

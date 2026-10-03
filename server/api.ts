@@ -104,6 +104,12 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse, url: 
     return true;
   }
 
+  if (p === "/api/progress/puzzle" && req.method === "GET") {
+    if (!me) return json(res, 200, { puzzles: [] }), true;
+    json(res, 200, { puzzles: q.puzzleDone.all(me.id).map((r) => (r as { puzzle_id: string }).puzzle_id) });
+    return true;
+  }
+
   if (p === "/api/puzzle/attempt" && req.method === "POST") {
     if (!me) return json(res, 401, { error: "Chưa đăng nhập." }), true;
     const b = await body(req);

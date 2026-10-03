@@ -101,6 +101,36 @@ export const LESSONS: Lesson[] = [
       { t: "text", md: "Các thế chiếu hết kinh điển cần nhớ mặt: **trùng pháo** (hai pháo cùng cột, pháo sau làm ngòi — không chặn được), **mã hậu pháo** (mã chiếu, pháo bảo vệ mã từ sau), **thiên địa pháo** (pháo trung lộ + pháo đáy khóa cung). Khai cuộc nên: phát triển Xe sớm (quân mạnh nhất), đừng đi một quân nhiều lần, giữ Sĩ-Tượng hoàn chỉnh để thủ cung." },
     ],
   },
+  {
+    id: "xq-don-chieu", game: "xiangqi", order: 4, title: "Các đòn chiếu kinh điển", sub: "Chiếu là đòn bẩy, khóa là chốt cửa",
+    blocks: [
+      { t: "text", md: "Đòn chiếu hết cờ tướng gần như luôn có **hai thành phần: chiếu + khóa**. Chiếu đơn lẻ thì tướng chạy; nhưng nếu trước đó các ô thoát đã bị *khóa* — bởi sĩ, tốt của chính địch, hoặc quân của mình soi hàng — thì chiếu một nước là hết.\n\nTrước khi đánh, hỏi: *tướng địch còn ô nào?* Ô nào còn mở, mình cần một quân soi ô đó." },
+      { t: "demo", note: "Pháo yểm trung lộ — năm ô thoát bị chính sĩ, tốt đen khóa kín; pháo vào cột giữa là hết", setup: { fen: "3aga3/3ppp3/9/9/9/3C5/9/9/9/4G4 r" }, moves: [{ from: x(5, 3), to: x(5, 4) }] },
+      { t: "text", md: "Thế này dạy điều quan trọng nhất: **cung địch tự khóa là quà tặng**. Chặn pháo bằng cách đặt quân lên cột giữa vô ích — pháo ăn *qua* ngòi, chỉ có ngòi mới cho pháo chiếu. Càng chặn càng nhanh chết." },
+      { t: "demo", note: "Mã đè sĩ — xe (1,0) khóa cả hàng 1 trước, mã chỉ việc nhảy vào chiếu", setup: { fen: "3aga3/R8/4c4/9/2H6/9/9/9/9/4G4 r" }, moves: [{ from: x(4, 2), to: x(2, 3) }] },
+      { t: "try", prompt: "Đỏ đi — chiếu hết trong 1 nước. Gợi ý: xe (1,8) đã khóa hàng 1, tìm điểm nhảy của mã mà chân trống.", setup: { fen: "3aga3/8R/4c4/9/4H4/9/9/9/9/4G4 r" }, solution: { from: x(4, 4), to: x(2, 3) }, hint: "Mã (4,4) nhảy về (2,3) — chân mã (3,4) đang trống." },
+      { t: "text", md: "Luyện theo công thức: **tìm ô chiếu → xem tướng chạy đâu → khóa ô đó trước**. Hai đòn trong bài này (pháo trung, mã đè sĩ) là hai trong số ít dạng chiếu hết xuất hiện nhiều nhất trong thực chiến." },
+    ],
+  },
+  {
+    id: "xq-khai-cuoc", game: "xiangqi", order: 5, title: "Khai cuộc: nguyên tắc vàng", sub: "Xe ra sớm, pháo vào trung, mã về trung",
+    blocks: [
+      { t: "text", md: "Khai cuộc cờ tướng có ba nguyên tắc sống còn:\n\n- **Xe ra sớm** — xe mạnh nhất bàn (9 điểm) mà kẹt trong góc thì thành quân trang trí. Vài nước đầu hãy dành cho xe.\n- **Pháo vào trung** — pháo giữa sông tạo áp lực trực diện, buộc đối thủ phải thủ.\n- **Mã về trung, nhớ chân mã** — mã chỉ mạnh khi chân trống; trước khi nhảy, nhìn ô kề theo hướng đi.\n\nCòn ba điều cấm: đừng đi Sĩ-Tượng sớm (mất tempo), đừng đi một quân nhiều lần, đừng để xe địch soi lộ cung." },
+      { t: "demo", note: "Pháo vào trung rồi kéo xe sang hàng 8 — quân mạnh nhất đã vào sân", setup: { moves: [] }, moves: [{ from: x(7, 1), to: x(7, 4) }, { from: x(2, 1), to: x(2, 4) }, { from: x(9, 0), to: x(8, 0) }, { from: x(0, 0), to: x(1, 0) }, { from: x(8, 0), to: x(8, 8) }, { from: x(1, 0), to: x(1, 8) }] },
+      { t: "try", prompt: "Đỏ đi đầu ván — phát triển quân nào để vừa chiếm trung tâm vừa sẵn sàng nhập thành?", setup: { moves: [] }, solution: { from: x(9, 1), to: x(7, 2) }, hint: "Nhảy mã cánh trái: (9,1) lên (7,2) — chân mã (8,1) trống." },
+      { t: "text", md: "Mẹo đếm tempo: sau 5 nước mỗi bên, mục tiêu tối thiểu là **2 xe đã ra, pháo đã vào trung, 1 mã đã về**. Đếm được nghĩa là bạn đang chơi, không phải đi dạo." },
+    ],
+  },
+  {
+    id: "chess-khai-cuoc", game: "chess", order: 5, title: "Khai cuộc: ba nguyên tắc", sub: "Trung tâm, phát triển, nhập thành",
+    blocks: [
+      { t: "text", md: "Cờ vua khai cuộc không cần học thuộc thế — chỉ cần ba nguyên tắc, áp được 90% ván:\n\n- **Chiếm trung tâm**: tốt e4/d4 (trắng) hay e5/d5 (đen). Quân ở trung tâm điều khiển nhiều ô nhất.\n- **Phát triển quân nhẹ**: mỗi nước đưa một quân MỚI ra (mã, tượng trước, xe sau). Đi một quân ba lần trong 10 nước đầu là tự mất tempo.\n- **Nhập thành sớm** — mục tiêu trước nước 10: vua vào góc an toàn, xe đã ra.\n\nCấm kị: đưa **hậu** ra sớm (bị mã đuổi, mất tempo), và đi mã ra biên (Na3/Nh3) khi chưa có lý do." },
+      { t: "demo", note: "Phát triển đối xứng — hai bên đều tuân thủ: tốt trung tâm, mã ra, tượng ra", setup: { fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }, moves: ["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5"] },
+      { t: "text", md: "Sau 6 nước này, cả hai bên đã có 4 quân nhẹ ra sân và đường chéo tượng chỉa vào f7/f2 — hai điểm yếu vĩnh viễn của khai cuộc. Bước tiếp theo tự nhiên: nhập thành O-O." },
+      { t: "try", prompt: "Trắng đi nước thứ 2 — phát triển quân nào? Chọn nước đưa quân nhẹ vào trung.", setup: { fen: "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2" }, solution: { from: "g1", to: "f3" }, hint: "Mã g1 nhảy f3: chiếm trung tâm và mở đường nhập thành." },
+      { t: "text", md: "Mẹo kiểm tra sau mỗi nước khai cuộc: *nước này phát triển quân mới không? vua được an toàn hơn không? quân nào vẫn ở nhà?* Hai câu hỏi đó thay thế toàn bộ lý thuyết khai cuộc cho người mới." },
+    ],
+  },
 
   /* ============ CỜ VÂY ============ */
   {

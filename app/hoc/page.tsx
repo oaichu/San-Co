@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
-import { lessonsByGame } from "@/lib/content/lessons";
+import { LESSONS, lessonsByGame } from "@/lib/content/lessons";
 import { BoardSkin } from "@/components/board/skins";
 import type { GameId } from "@/lib/games/registry";
 
@@ -13,14 +13,34 @@ const TABS: { id: GameId; name: string }[] = [
   { id: "xiangqi", name: "Cờ tướng" },
   { id: "go", name: "Cờ vây" },
 ];
+const LS_KEY = "san-co-lessons-done";
+
+const loadLocal = (): Set<string> => {
+  if (typeof window === "undefined") return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as string[]); } catch { return new Set(); }
+};
 
 export default function HocPage() {
   const [game, setGame] = useState<GameId>("caro");
   const [done, setDone] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch("/api/progress").then((r) => r.json()).then((d) => setDone(new Set(d.lessons ?? []))).catch(() => {});
+    let alive = true;
+    Promise.resolve().then(() => {
+      if (alive) setDone(loadLocal());
+      return fetch("/api/progress").then((r) => r.ok ? r.json() : null).then((d) => {
+        if (alive && d?.lessons) setDone((s) => new Set([...s, ...(d.lessons as string[])]));
+      });
+    }).catch(() => {});
+    return () => { alive = false; };
   }, []);
+
+  const list = lessonsByGame(game);
+  const nextLesson = useMemo(
+    () => list.find((l) => !done.has(l.id)) ?? null,
+    [list, done],
+  );
+  const totalDone = LESSONS.filter((l) => done.has(l.id)).length;
 
   return (
     <main className="relative min-h-screen">
@@ -28,19 +48,38 @@ export default function HocPage() {
       <div className="mx-auto max-w-[1240px] px-5 pb-24 pt-[104px] md:px-11">
         <h1 className="font-display text-[clamp(30px,4vw,48px)] font-bold tracking-[-0.025em]">Học cờ.</h1>
         <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.65] text-ink-2">
-          Giáo trình ngắn, có bàn cờ tương tác trong từng bài. Đăng nhập để lưu tiến độ.
+          Giáo trình ngắn, có bàn cờ tương tác trong từng bài. Tiến độ lưu trên máy; đăng nhập để đồng bộ mọi thiết bị.
+        </p>
+        <p className="tabular mt-3 text-[13px] font-medium text-ink-3">
+          Đã học {totalDone}/{LESSONS.length} bài
         </p>
 
         <div className="mt-8 flex gap-1.5 border-b border-line pb-px">
-          {TABS.map((t) => (
-            <button key={t.id} onClick={() => setGame(t.id)} className={`rounded-t-lg px-4 py-2.5 text-[13.5px] font-semibold transition-colors duration-150 ${t.id === game ? "bg-surface text-ink shadow-[inset_0_-2px_0_var(--vermilion)]" : "text-ink-2 hover:text-ink"}`}>
-              {t.name}
-            </button>
-          ))}
+          {TABS.map((t) => {
+            const g = lessonsByGame(t.id);
+            const d = g.filter((l) => done.has(l.id)).length;
+            return (
+              <button key={t.id} onClick={() => setGame(t.id)} className={`rounded-t-lg px-4 py-2.5 text-[13.5px] font-semibold transition-colors duration-150 ${t.id === game ? "bg-surface text-ink shadow-[inset_0_-2px_0_var(--vermilion)]" : "text-ink-2 hover:text-ink"}`}>
+                {t.name}
+                <span className="tabular ml-1.5 text-[11px] font-medium text-ink-3">{d}/{g.length}</span>
+              </button>
+            );
+          })}
         </div>
 
+        {nextLesson && (
+          <Link href={`/hoc/${nextLesson.id}`} className="group mt-6 flex items-center justify-between gap-4 rounded-2xl border border-vermilion/40 bg-vermilion-soft px-6 py-4 transition-all duration-150 hover:-translate-y-0.5">
+            <span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.1em] text-vermilion">Học tiếp</span>
+              <span className="mt-0.5 block text-[15.5px] font-semibold text-ink group-hover:text-vermilion transition-colors duration-150">{nextLesson.title}</span>
+              <span className="mt-0.5 block text-[13px] text-ink-2">{nextLesson.sub}</span>
+            </span>
+            <span className="shrink-0 text-[18px] text-vermilion transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true">→</span>
+          </Link>
+        )}
+
         <div className="grid gap-px overflow-hidden border-b border-line sm:grid-cols-2">
-          {lessonsByGame(game).map((l, i) => (
+          {list.map((l, i) => (
             <Link key={l.id} href={`/hoc/${l.id}`} className="group flex gap-5 border-t border-line py-6 pr-2 transition-colors duration-150 hover:bg-surface/60">
               <span className="tabular font-display text-[15px] font-semibold text-ink-3">0{i + 1}</span>
               <div className="min-w-0">

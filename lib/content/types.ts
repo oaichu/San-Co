@@ -25,5 +25,9 @@ export interface Puzzle {
   /** chuỗi nước giải: nước người chơi xen kẽ nước đối thủ (nếu có) */
   solution: unknown[];
   hint?: string;
+  /** hiện sau khi giải xong: vì sao nước đó thắng */
+  explain?: string;
+  /** chủ đề: "Chiếu hết", "Bắt quân", "Nước đôi"... */
+  theme?: string;
   difficulty: 1 | 2 | 3;
 }

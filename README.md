@@ -28,7 +28,7 @@
 | **Đấu online** | WebSocket realtime, server validate mọi nước đi, ELO cập nhật tự động |
 | **Đồng hồ thi đấu** | Bullet 1+0 đến rapid 15+10, increment, hết giờ = thua |
 | **Giải đấu** | Loại trực tiếp, vòng tròn, Thụy Sĩ (Buchholz) — tự bốc cặp, tự tiến vòng |
-| **Học & luyện** | Giáo trình tương tác 4 game, 41 cờ thế được engine kiểm chứng |
+| **Học & luyện** | Giáo trình tương tác 4 game (18 bài), 49 cờ thế nhiều nước được engine kiểm chứng |
 | **Giao diện** | Sơn mài — canvas nâu đen + son đỏ, light/dark, mobile đầy đủ |
 | **Tự chủ** | Một container: Next.js + WS + SQLite. Không dịch vụ trả phí |
 
@@ -76,7 +76,7 @@ Trận giải tự mở phòng riêng với đồng hồ chuẩn, hệ thống t
 app/            Next.js App Router — /, /choi/*, /online, /giai-dau, /hoc, /puzzle, /ho-so
 components/     board components, landing, learn widgets, Nav, LiquidCanvas
 lib/games/      engine 4 game + AI + adapter registry (dùng chung client & server)
-lib/content/    giáo trình + 41 cờ thế (được test validate bằng chính engine)
+lib/content/    giáo trình 18 bài + 49 cờ thế (được test validate bằng chính engine)
 lib/tournament.ts  bốc cặp KO / vòng tròn / Thụy Sĩ + nhịp giờ
 server/         custom Node server: api.ts, rooms.ts (WS + clock), tour.ts, db.ts
 ```

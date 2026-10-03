@@ -137,6 +137,7 @@ export const q = {
   markLesson: db.prepare("INSERT OR IGNORE INTO lesson_progress (user_id, lesson_id) VALUES (?, ?)"),
   lessonDone: db.prepare("SELECT lesson_id FROM lesson_progress WHERE user_id = ?"),
   puzzleAttempt: db.prepare("INSERT OR REPLACE INTO puzzle_attempts (user_id, puzzle_id, solved) VALUES (?, ?, ?)"),
+  puzzleDone: db.prepare("SELECT puzzle_id FROM puzzle_attempts WHERE user_id = ? AND solved = 1"),
   purgeSessions: db.prepare("DELETE FROM sessions WHERE expires_at < unixepoch()"),
 };
 
