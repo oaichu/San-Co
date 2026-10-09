@@ -23,7 +23,7 @@ const LINKS = [
   { href: "/online", label: "Online" },
   { href: "/giai-dau", label: "Giải đấu" },
   { href: "/hoc", label: "Học" },
-  { href: "/puzzle", label: "Puzzle" },
+  { href: "/puzzle", label: "Thế cờ" },
   { href: "/ho-so", label: "Hồ sơ" },
 ];
 
@@ -40,7 +40,14 @@ export function Nav() {
   return (
     <nav
       className="fixed inset-x-0 top-0 z-50 border-b border-line"
-      style={{ background: "color-mix(in srgb, var(--canvas) 62%, transparent)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+      style={{
+        background: "color-mix(in srgb, var(--canvas) 62%, transparent)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
     >
       <div className="flex h-[68px] items-center justify-between px-5 md:px-11">
         <Logo />

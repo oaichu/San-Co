@@ -2,8 +2,8 @@
 
 import { XQ_W, XQ_H, colorOf, type XqState } from "@/lib/games/xiangqi/rules";
 
-const CHAR_R: Record<string, string> = { r: "車", h: "馬", e: "相", a: "仕", g: "帥", c: "炮", p: "兵" };
-const CHAR_B: Record<string, string> = { r: "車", h: "馬", e: "象", a: "士", g: "將", c: "砲", p: "卒" };
+export const CHAR_R: Record<string, string> = { r: "車", h: "馬", e: "相", a: "仕", g: "帥", c: "炮", p: "兵" };
+export const CHAR_B: Record<string, string> = { r: "車", h: "馬", e: "象", a: "士", g: "將", c: "砲", p: "卒" };
 
 const PAD = "6.5%";
 const XQ_CREAM = "radial-gradient(circle at 36% 28%, #faf0d6 0%, #ecd9ac 62%, #d8bd8a 100%)";
@@ -69,6 +69,7 @@ export function XiangqiBoard({
   onPoint,
   disabled,
   flipped,
+  hint,
 }: {
   state: XqState;
   selected: number | null;
@@ -77,12 +78,14 @@ export function XiangqiBoard({
   disabled?: boolean;
   /** xoay bàn 180° cho bên đen khi chơi online */
   flipped?: boolean;
+  /** điểm gợi ý: vòng son nhấp nhẹ trên điểm đi + điểm đến */
+  hint?: { from: number; to: number } | null;
 }) {
   return (
     <div
       role="grid"
       aria-label="Bàn cờ tướng"
-      className="relative mx-auto aspect-[9/10] w-full max-w-[560px] touch-manipulation select-none overflow-hidden rounded-xl border border-edge shadow-lift"
+      className="@container relative mx-auto aspect-[9/10] w-full max-w-[560px] touch-manipulation select-none overflow-hidden rounded-xl border border-edge shadow-lift"
       style={{ background: "linear-gradient(160deg, var(--wood-1), var(--wood-2))" }}
     >
       <div className="pointer-events-none absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 2px 10px rgba(60,36,10,.32), inset 0 -1px 0 rgba(255,240,210,.22)" }} aria-hidden="true" />
@@ -92,7 +95,7 @@ export function XiangqiBoard({
       {/* chữ sông */}
       <div
         className="pointer-events-none absolute left-0 right-0 top-1/2 flex -translate-y-1/2 items-center justify-between font-display font-semibold text-[--wood-line]"
-        style={{ paddingInline: "12%", fontSize: "clamp(15px, 4vw, 26px)", letterSpacing: "0.22em", color: "var(--wood-line)" }}
+        style={{ paddingInline: "12%", fontSize: "4.6cqw", letterSpacing: "0.22em", color: "var(--wood-line)" }}
         aria-hidden="true"
       >
         <span style={flipped ? { transform: "scale(-1,-1)" } : undefined}>楚 河</span>
@@ -108,6 +111,7 @@ export function XiangqiBoard({
           const col = p ? colorOf(p) : null;
           const isSel = selected === i;
           const isTarget = targets.has(i);
+          const isHint = hint != null && (hint.from === i || hint.to === i);
           const isLast = state.lastMove && (state.lastMove.from === i || state.lastMove.to === i);
           const pc = col === "r" ? "var(--xq-red)" : "var(--xq-ink)";
           return (
@@ -133,7 +137,7 @@ export function XiangqiBoard({
               )}
               {p && (
                 <span
-                  className={`absolute inset-[4%] flex items-center justify-center rounded-full text-[clamp(15px,3.6vw,27px)] font-semibold leading-none animate-[stone-in_200ms_ease-out] transition-transform duration-150 ease-out ${
+                  className={`absolute inset-[4%] flex items-center justify-center rounded-full text-[5.3cqw] font-semibold leading-none animate-[stone-in_200ms_ease-out] transition-transform duration-150 ease-out ${
                     col === "r" && !disabled ? "group-enabled:group-hover:-translate-y-[3%]" : ""
                   }`}
                   style={{
@@ -150,6 +154,9 @@ export function XiangqiBoard({
                   <span className="pointer-events-none absolute inset-[9%] rounded-full" style={{ border: `1px solid color-mix(in srgb, ${pc} 55%, transparent)` }} aria-hidden="true" />
                   {col === "r" ? CHAR_R[p.toLowerCase()] : CHAR_B[p.toLowerCase()]}
                 </span>
+              )}
+              {isHint && (
+                <span className="hint-ring pointer-events-none absolute inset-0 rounded-full border-2 border-vermilion" aria-hidden="true" />
               )}
               {/* nước cuối: chấm son nhỏ ở góc điểm đi/đến */}
               {isLast && (

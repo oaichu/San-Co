@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
+import { TabBar } from "@/components/TabBar";
 import "./globals.css";
 
 const beVietnam = Be_Vietnam_Pro({
@@ -13,11 +14,13 @@ export const metadata: Metadata = {
   title: "Sân Cờ — Sân cờ của người Việt",
   description:
     "Cờ vua, cờ tướng, cờ caro, cờ vây. Đấu với AI nhiều cấp độ, thi đấu xếp hạng ELO, học từng nước đi ngay trên bàn cờ.",
+  appleWebApp: { capable: true, title: "Sân Cờ", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f4efe3" },
     { media: "(prefers-color-scheme: dark)", color: "#14100b" },
@@ -36,7 +39,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <TabBar />
+      </body>
     </html>
   );
 }

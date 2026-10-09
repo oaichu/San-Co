@@ -12,6 +12,7 @@ export function ChessBoard({
   disabled,
   lastMove,
   flipped,
+  hint,
 }: {
   game: Chess;
   selected: Square | null;
@@ -21,6 +22,8 @@ export function ChessBoard({
   lastMove?: { from: string; to: string } | null;
   /** xoay bàn 180° cho người cầm quân đen */
   flipped?: boolean;
+  /** ô gợi ý: vòng son nhấp nhẹ trên ô đi + ô đến */
+  hint?: { from: string; to: string } | null;
 }) {
   const board = game.board();
   const checkSq = game.inCheck()
@@ -32,7 +35,7 @@ export function ChessBoard({
       role="grid"
       aria-label="Bàn cờ vua"
       className="mx-auto grid aspect-square w-full max-w-[620px] touch-manipulation select-none overflow-hidden rounded-xl border border-edge shadow-lift"
-      style={{ gridTemplateColumns: "repeat(8, 1fr)" }}
+      style={{ gridTemplateColumns: "repeat(8, minmax(0, 1fr))", gridTemplateRows: "repeat(8, minmax(0, 1fr))" }}
     >
       {board.flat().map((_, disp) => {
         const sqIdx = flipped ? 63 - disp : disp;
@@ -82,7 +85,7 @@ export function ChessBoard({
             {/* chấm nước đi hợp lệ — kiểu quốc tế: chấm nhỏ giữa ô / vòng ăn quân */}
             {isTarget && !sq && (
               <span
-                className="h-[30%] w-[30%] rounded-full"
+                className="absolute inset-[35%] rounded-full"
                 style={{ background: light ? "rgba(60,42,20,.34)" : "rgba(20,14,8,.34)" }}
               />
             )}
@@ -92,12 +95,16 @@ export function ChessBoard({
                 style={{ border: "4px solid rgba(60,42,20,.42)" }}
               />
             )}
+            {(hint?.from === name || hint?.to === name) && (
+              <span className="hint-ring pointer-events-none absolute inset-[3%] z-10 rounded-[4px] border-2 border-vermilion" aria-hidden="true" />
+            )}
             {sq && (
               <span
-                className={`relative h-[86%] w-[86%] transition-transform duration-150 ease-out ${
+                data-piece={sq.color}
+                className={`chess-piece pointer-events-none absolute inset-[7%] transition-transform duration-150 ease-out ${
                   slid ? "" : "animate-[stone-in_180ms_ease-out]"
                 } ${own && !disabled ? "group-enabled:group-hover:-translate-y-[4%]" : ""}`}
-                style={{ filter: "drop-shadow(0 3px 3px rgba(20,12,4,.38))", ...slid }}
+                style={slid}
               >
                 <Piece t={sq.type as PieceType} c={sq.color} />
               </span>

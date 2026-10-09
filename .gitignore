@@ -42,3 +42,5 @@ next-env.d.ts
 data/
 *.db
 *.db-*
+.opencode/
+.agents/skills/impeccable/scripts/bin/

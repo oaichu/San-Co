@@ -170,6 +170,9 @@ function pseudo(board: string[], i: number): number[] {
   return out;
 }
 
+/** alias public cho AI: nước pseudo-legal (chưa kiểm tra tự chiếu) */
+export const pseudoMoves = pseudo;
+
 export function generalAt(board: string[], col: XqColor): number {
   return board.findIndex((p) => p.toLowerCase() === "g" && colorOf(p) === col);
 }

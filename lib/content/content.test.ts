@@ -63,15 +63,30 @@ describe("lesson content hợp lệ", () => {
   }
 });
 
-/** các thế chiếu hết: sau chuỗi giải, ván phải kết thúc với người giải thắng */
-const MATE_PUZZLES = new Set(["xq-11", "xq-12", "xq-14", "chess-12", "chess-13"]);
-/** các thế bắt quân: sau chuỗi giải, đối thủ mất quân, mình nguyên vẹn */
-const CAPTURE_XQ_PUZZLES = new Set(["xq-13", "xq-15"]);
+/* ===== kiểm tra theo theme: thế nào thì phải kết thúc ra sao ===== */
+
+const CHESS_VAL: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function chessMat(c: any, color: "w" | "b"): number {
+  let s = 0;
+  for (const row of c.board()) for (const p of row) if (p && p.color === color) s += CHESS_VAL[p.type];
+  return s;
+}
+const xqCount = (board: string[], red: boolean) => board.filter((q) => q && (q === q.toUpperCase()) === red).length;
 
 describe("puzzle content hợp lệ", () => {
   it("id không trùng", () => {
     const ids = PUZZLES.map((p) => p.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("mỗi game ≥ 25 thế, ≥ 7 thế 3 sao, ≥ 8 thế 1 sao", () => {
+    for (const game of ["caro", "chess", "xiangqi", "go"] as const) {
+      const ps = PUZZLES.filter((p) => p.game === game);
+      expect(ps.length, game).toBeGreaterThanOrEqual(25);
+      expect(ps.filter((p) => p.difficulty === 3).length, `${game} d3`).toBeGreaterThanOrEqual(7);
+      expect(ps.filter((p) => p.difficulty === 1).length, `${game} d1`).toBeGreaterThanOrEqual(8);
+    }
   });
 
   for (const p of PUZZLES) {
@@ -96,29 +111,64 @@ describe("puzzle content hợp lệ", () => {
       }
     });
 
-    if (MATE_PUZZLES.has(p.id)) {
-      it(`${p.id}: nước cuối là chiếu hết`, () => {
-        let s = buildState(p.game, p.setup);
-        for (const m of p.solution) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          s = adapters[p.game].apply(s as never, m as any) as any;
-        }
-        expect(adapters[p.game].result(s), `${p.id}: sau chuỗi giải ván phải kết thúc`).toBeTruthy();
-        expect(adapters[p.game].result(s)).toBe(adapters[p.game].seatToMove(buildState(p.game, p.setup)) === "p1" ? "p1" : "p2");
+    const need = `${p.id} (${p.theme ?? "?"})`;
+    const solver = () => adapters[p.game].seatToMove(buildState(p.game, p.setup));
+    const playAll = () => {
+      let s = buildState(p.game, p.setup);
+      for (const m of p.solution) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        s = adapters[p.game].apply(s as never, m as any) as any;
+      }
+      return s;
+    };
+
+    if ((p.game === "chess" || p.game === "xiangqi") && p.theme === "Chiếu hết") {
+      it(`${p.id}: chiếu hết — người giải thắng`, () => {
+        expect(adapters[p.game].result(playAll()), need).toBe(solver());
       });
     }
-
-    if (CAPTURE_XQ_PUZZLES.has(p.id)) {
+    if (p.game === "chess" && (p.theme === "Bắt quân" || p.theme === "Chiến thuật")) {
+      it(`${p.id}: chênh lệch quân cải thiện`, () => {
+        const s0 = buildState(p.game, p.setup);
+        const s = playAll();
+        const color = solver() === "p1" ? "w" : "b";
+        const d = (c: unknown) => chessMat(c, color) - chessMat(c, color === "w" ? "b" : "w");
+        expect(d(s), need).toBeGreaterThan(d(s0));
+      });
+    }
+    if (p.game === "xiangqi" && p.theme === "Bắt quân") {
       it(`${p.id}: bắt được quân đen, đỏ nguyên vẹn`, () => {
         const s0 = buildState(p.game, p.setup);
-        let s = s0;
-        for (const m of p.solution) {
+        const s = playAll();
+        const red = solver() === "p1";
+        expect(xqCount(s.board, !red), need).toBeLessThan(xqCount(s0.board, !red));
+        expect(xqCount(s.board, red), need).toBe(xqCount(s0.board, red));
+      });
+    }
+    if (p.game === "caro" && (p.theme === "Tấn công" || p.solution.length >= 3)) {
+      it(`${p.id}: tấn công — người giải thắng`, () => {
+        expect(adapters[p.game].result(playAll()), need).toBe(solver());
+      });
+    }
+    if (p.game === "caro" && p.theme === "Phòng thủ") {
+      it(`${p.id}: phòng thủ — đối thủ không còn nước thắng ngay`, () => {
+        const a = adapters[p.game];
+        const s = playAll();
+        const oppTurn = s.turn;
+        for (let i = 0; i < s.board.length; i++) {
+          if (s.board[i] !== 0) continue;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          s = adapters[p.game].apply(s as never, m as any) as any;
+          const t = a.apply(s as never, i as any) as any;
+          expect(t?.winner ?? 0, `${p.id}: đối thủ thắng ngay ở ô ${i}`).not.toBe(oppTurn);
         }
-        const count = (b: string[], red: boolean) => b.filter((q) => q && (q === q.toUpperCase()) === red).length;
-        expect(count(s.board, false)).toBeLessThan(count(s0.board, false));
-        expect(count(s.board, true)).toBe(count(s0.board, true));
+      });
+    }
+    if (p.game === "go" && (p.theme === "Bắt quân" || p.theme === "Thang" || p.theme === "Ko")) {
+      it(`${p.id}: bắt được quân trắng`, () => {
+        const s0 = buildState(p.game, p.setup);
+        const s = playAll();
+        const si = solver() === "p1" ? 0 : 1;
+        expect(s.captures[si], need).toBeGreaterThan(s0.captures[si]);
       });
     }
   }

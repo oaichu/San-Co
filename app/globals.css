@@ -40,6 +40,9 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   /* Sân Cờ custom tokens */
+  --color-canvas: var(--canvas);
+  --color-accent-ink: var(--accent-ink);
+  --color-vermilion-soft: var(--vermilion-soft);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);
@@ -63,6 +66,7 @@
 
 /* ============ LIGHT (giấy dó) — default theme ============ */
 :root {
+  color-scheme: light;
   --canvas: #f4efe3;
   --surface: #fbf7ee;
   --surface-2: #efe8d8;
@@ -121,6 +125,7 @@
 
 /* ============ DARK (sơn mài) ============ */
 [data-theme="dark"] {
+  color-scheme: dark;
   --canvas: #14100b;
   --surface: #1e1811;
   --surface-2: #262017;
@@ -138,8 +143,8 @@
   --stone-o: #efe7d8;
   --go-b: #211c15;
   --go-w: #ece3d0;
-  --chess-l: #4a3f30;
-  --chess-d: #2b2318;
+  --chess-l: #957d57;
+  --chess-d: #78623f;
   --wood-1: #b8945f;
   --wood-2: #96713f;
   --wood-line: rgba(38, 24, 8, 0.8);
@@ -175,6 +180,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     @apply font-sans;
@@ -220,6 +226,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* quân cờ vua: bóng đổ mềm; quân đen thêm viền sáng mảnh ở theme tối để không chìm vào ô đậm */
+.chess-piece {
+  filter: drop-shadow(0 3px 3px rgba(20, 12, 4, 0.38));
+}
+[data-theme="dark"] .chess-piece[data-piece="b"] {
+  filter:
+    drop-shadow(0 0 1.1px rgba(245, 232, 205, 0.7))
+    drop-shadow(0 3px 3px rgba(20, 12, 4, 0.45));
+}
+
 /* stone pop + win */
 @keyframes stone-in {
   from {
@@ -252,6 +268,95 @@
     opacity: 0.45;
     transform: scale(0.75);
   }
+}
+
+/* bàn cờ tương tác: chặn double-tap zoom, chặn cuộn nảy, chặn bôi chữ */
+.play-board {
+  touch-action: manipulation;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* vòng son gợi ý nhấp nhẹ (hint) — tắt khi reduced-motion */
+@keyframes hint-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.hint-ring {
+  animation: hint-pulse 900ms ease-in-out 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint-ring {
+    animation: none;
+  }
+}
+
+/* ba chấm "máy đang nghĩ" */
+@keyframes thinking-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thinking-dot {
+    animation: none;
+  }
+}
+
+/* shake bàn khi đi sai thế cờ (4 đoạn ±6/±4/±2px) */
+@keyframes board-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  28.57% {
+    transform: translateX(-6px);
+  }
+  57.14% {
+    transform: translateX(4px);
+  }
+  78.57% {
+    transform: translateX(-2px);
+  }
+}
+.board-shake {
+  animation: board-shake 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-shake {
+    animation: none;
+  }
+}
+
+/* hero landing board: quân tạo bằng DOM nên cần style global, không scoped */
+.hero-stone {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  animation: stone-in 300ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.5);
+}
+.hero-stone.x {
+  background: var(--stone-x);
+}
+.hero-stone.o {
+  background: var(--stone-o);
+}
+.hero-stone.last {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 2px;
+}
+.hero-stone.win {
+  animation: win-pop 600ms cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

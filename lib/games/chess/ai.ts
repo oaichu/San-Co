@@ -1,83 +1,218 @@
 import { Chess, type Move } from "chess.js";
 
 const VAL: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
-const CENTER = [3, 4];
-const NODE_CAP = 60000;
+const MATE = 100000;
+
+/**
+ * Bảng điểm vị trí (rút gọn từ Michniewski), nhìn từ phía trắng,
+ * ô [rank 0=trắng..7=đen][file a..h]. Đen dùng bản lật dọc.
+ */
+const PST: Record<string, number[]> = {
+  p: [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    50, 50, 50, 50, 50, 50, 50, 50,
+    10, 10, 20, 30, 30, 20, 10, 10,
+    5, 5, 10, 25, 25, 10, 5, 5,
+    0, 0, 0, 20, 20, 0, 0, 0,
+    5, -5, -10, 0, 0, -10, -5, 5,
+    5, 10, 10, -20, -20, 10, 10, 5,
+    0, 0, 0, 0, 0, 0, 0, 0,
+  ],
+  n: [
+    -50, -40, -30, -30, -30, -30, -40, -50,
+    -40, -20, 0, 0, 0, 0, -20, -40,
+    -30, 0, 10, 15, 15, 10, 0, -30,
+    -30, 5, 15, 20, 20, 15, 5, -30,
+    -30, 0, 15, 20, 20, 15, 0, -30,
+    -30, 5, 10, 15, 15, 10, 5, -30,
+    -40, -20, 0, 5, 5, 0, -20, -40,
+    -50, -40, -30, -30, -30, -30, -40, -50,
+  ],
+  b: [
+    -20, -10, -10, -10, -10, -10, -10, -20,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -10, 0, 5, 10, 10, 5, 0, -10,
+    -10, 5, 5, 10, 10, 5, 5, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10,
+    -10, 10, 10, 10, 10, 10, 10, -10,
+    -10, 5, 0, 0, 0, 0, 5, -10,
+    -20, -10, -10, -10, -10, -10, -10, -20,
+  ],
+  r: [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    5, 10, 10, 10, 10, 10, 10, 5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5,
+    0, 0, 0, 5, 5, 0, 0, 0,
+  ],
+  q: [
+    -20, -10, -10, -5, -5, -10, -10, -20,
+    -10, 0, 0, 0, 0, 0, 0, -10,
+    -10, 0, 5, 5, 5, 5, 0, -10,
+    -5, 0, 5, 5, 5, 5, 0, -5,
+    0, 0, 5, 5, 5, 5, 0, -5,
+    -10, 5, 5, 5, 5, 5, 0, -10,
+    -10, 0, 5, 0, 0, 0, 0, -10,
+    -20, -10, -10, -5, -5, -10, -10, -20,
+  ],
+  k: [
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -20, -30, -30, -40, -40, -30, -30, -20,
+    -10, -20, -20, -20, -20, -20, -20, -10,
+    20, 20, 0, 0, 0, 0, 20, 20,
+    20, 30, 10, 0, 0, 10, 30, 20,
+  ],
+};
 
 function evaluate(c: Chess): number {
-  if (c.isCheckmate()) return c.turn() === "w" ? -99999 : 99999;
-  if (c.isDraw() || c.isStalemate() || c.isThreefoldRepetition()) return 0;
   let score = 0;
-  for (const row of c.board())
+  for (const row of c.board()) {
     for (const sq of row) {
       if (!sq) continue;
-      let v = VAL[sq.type];
-      if (sq.type !== "k" && sq.type !== "r") {
-        const file = sq.square.charCodeAt(0) - 97;
-        const rank = 8 - Number(sq.square[1]);
-        v += (3 - Math.abs(CENTER[0] - file)) + (3 - Math.abs(CENTER[1] - rank));
-      }
+      const file = sq.square.charCodeAt(0) - 97;
+      const rank = Number(sq.square[1]) - 1; // 1..8 → 0..7
+      // trắng đọc bảng từ dưới lên: hàng rank1 = chỉ số (8-rank)... PST viết cho trắng với rank0 ở đầu
+      const idx = sq.color === "w" ? (8 - (rank + 1)) * 8 + file : rank * 8 + file;
+      const v = VAL[sq.type] + PST[sq.type][idx];
       score += sq.color === "w" ? v : -v;
     }
+  }
   return score;
 }
 
-/** Nước đi sắp capture trước (MVV-LVA đơn giản) → alpha-beta cắt sớm */
-function orderedMoves(c: Chess): Move[] {
-  const ms = c.moves({ verbose: true });
-  ms.sort((a, b) => (b.captured ? VAL[b.captured] : 0) - (a.captured ? VAL[a.captured] : 0));
+/** điểm sắp nước: capture MVV-LVA, phong cấp, chiếu sớm */
+function moveScore(m: Move): number {
+  let s = 0;
+  if (m.captured) s += 10 * VAL[m.captured] - VAL[m.piece];
+  if (m.promotion) s += VAL[m.promotion] ?? 0;
+  if (m.san.includes("+") || m.san.includes("#")) s += 50;
+  return s;
+}
+
+function orderedMoves(c: Chess, capturesOnly = false): Move[] {
+  let ms = c.moves({ verbose: true });
+  if (capturesOnly) ms = ms.filter((m) => m.captured || m.promotion);
+  ms.sort((a, b) => moveScore(b) - moveScore(a));
   return ms;
 }
 
 let nodes = 0;
+let deadline = Infinity;
+let aborted = false;
 
-function alphabeta(c: Chess, depth: number, alpha: number, beta: number): number {
-  if (depth === 0 || c.isGameOver() || nodes > NODE_CAP) return evaluate(c);
+const outOfTime = () => {
+  if (deadline === Infinity) return false;
+  if ((nodes & 255) === 0 && Date.now() > deadline) aborted = true;
+  return aborted;
+};
+
+/** quiescence: capture + phong cấp; khi bị chiếu duyệt mọi nước để không bỏ sót chiếu hết */
+function quiesce(c: Chess, alpha: number, beta: number, ply: number): number {
   nodes++;
-  const moves = orderedMoves(c);
-  if (c.turn() === "w") {
-    let best = -Infinity;
-    for (const m of moves) {
-      c.move(m);
-      best = Math.max(best, alphabeta(c, depth - 1, alpha, beta));
-      c.undo();
-      alpha = Math.max(alpha, best);
-      if (beta <= alpha || nodes > NODE_CAP) break;
-    }
-    return best;
+  const sign = c.turn() === "w" ? 1 : -1;
+  if (outOfTime() || ply > 10) return evaluate(c) * sign;
+  const checked = c.inCheck();
+  let a = alpha;
+  if (!checked) {
+    const stand = evaluate(c) * sign;
+    if (stand >= beta) return beta;
+    if (stand > a) a = stand;
   }
-  let best = Infinity;
+  const ms = orderedMoves(c, !checked);
+  if (ms.length === 0) return checked ? -MATE + ply : a;
+  for (const m of ms) {
+    c.move(m);
+    const v = -quiesce(c, -beta, -a, ply + 1);
+    c.undo();
+    if (v >= beta) return beta;
+    if (v > a) a = v;
+  }
+  return a;
+}
+
+function negamax(c: Chess, depth: number, alpha: number, beta: number, ply: number): number {
+  nodes++;
+  if (outOfTime()) return evaluate(c) * (c.turn() === "w" ? 1 : -1);
+  if (c.isDraw() || c.isThreefoldRepetition() || c.isInsufficientMaterial() || c.isDrawByFiftyMoves()) return 0;
+  if (depth <= 0) return quiesce(c, alpha, beta, ply);
+  const moves = orderedMoves(c);
+  if (moves.length === 0) return c.inCheck() ? -MATE + ply : 0;
+  let best = -Infinity;
   for (const m of moves) {
     c.move(m);
-    best = Math.min(best, alphabeta(c, depth - 1, alpha, beta));
+    const v = -negamax(c, depth - 1, -beta, -alpha, ply + 1);
     c.undo();
-    beta = Math.min(beta, best);
-    if (beta <= alpha || nodes > NODE_CAP) break;
+    if (v > best) best = v;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta || aborted) break;
   }
   return best;
 }
 
-const CFG = [
-  { depth: 1, noise: 600, top: 6 }, // Người mới
-  { depth: 1, noise: 250, top: 3 }, // Dễ
-  { depth: 2, noise: 90, top: 2 },  // Trung bình
-  { depth: 2, noise: 30, top: 1 },  // Khó
-  { depth: 3, noise: 8, top: 1 },   // Cao thủ
-] as const;
+/** iterative deepening: trả nước tốt nhất của lần lặp sâu nhất hoàn thành */
+function searchRoot(c: Chess, maxDepth: number): Move | null {
+  const rootMoves = orderedMoves(c);
+  if (rootMoves.length === 0) return null;
+  let best = rootMoves[0];
+  for (let depth = 1; depth <= maxDepth; depth++) {
+    if (aborted) break;
+    let iterBest = best;
+    let alpha = -Infinity;
+    let completed = true;
+    // nước tốt của vòng trước đi trước
+    const ordered = [best, ...rootMoves.filter((m) => m !== best)];
+    for (const m of ordered) {
+      c.move(m);
+      const v = -negamax(c, depth - 1, -Infinity, -alpha, 1);
+      c.undo();
+      if (aborted) { completed = false; break; }
+      if (v > alpha) { alpha = v; iterBest = m; }
+    }
+    if (completed) best = iterBest;
+    if (alpha > MATE - 100) break; // đã thấy chiếu hết gần nhất
+  }
+  return best;
+}
+
+const NOISE = [600, 250, 90, 0, 0] as const;
+const TIME_MS = [0, 0, 0, 700, 1500] as const;
+
+export interface AiOpts {
+  timeMs?: number;
+  depth?: number;
+}
 
 /** Chọn nước SAN cho bên đang tới lượt */
-export function pickChessMove(c: Chess, level: number): string | null {
-  const cfg = CFG[Math.max(0, Math.min(4, level))];
+export function pickChessMove(c: Chess, level: number, opts?: AiOpts): string | null {
+  const lv = Math.max(0, Math.min(4, level));
   const moves = orderedMoves(c);
   if (moves.length === 0) return null;
   nodes = 0;
-  const maximizing = c.turn() === "w";
-  const scored = moves.map((m) => {
-    c.move(m);
-    const s = alphabeta(c, cfg.depth - 1, -Infinity, Infinity) + Math.random() * cfg.noise;
-    c.undo();
-    return { m, s };
-  });
-  scored.sort((a, b) => (maximizing ? b.s - a.s : a.s - b.s));
-  return scored[Math.floor(Math.random() * Math.min(cfg.top, scored.length))].m.san;
+  aborted = false;
+  const budget = opts?.depth ? Infinity : (opts?.timeMs ?? (TIME_MS[lv] || Infinity));
+  deadline = budget === Infinity ? Infinity : Date.now() + budget;
+
+  if (lv <= 1 && !opts?.depth) {
+    // cấp thấp: đánh giá nông + nhiễu, bắt chước lỗi người mới
+    const noise = NOISE[lv];
+    const sign = c.turn() === "w" ? 1 : -1;
+    const scored = moves.map((m) => {
+      c.move(m);
+      const s = evaluate(c) * sign + Math.random() * noise;
+      c.undo();
+      return { m, s };
+    });
+    scored.sort((a, b) => b.s - a.s);
+    return scored[Math.floor(Math.random() * Math.min(lv === 0 ? 6 : 3, scored.length))].m.san;
+  }
+
+  const depthCap = opts?.depth ?? (lv === 2 ? 2 : lv === 3 ? 6 : 8);
+  const best = searchRoot(c, depthCap);
+  return best?.san ?? null;
 }

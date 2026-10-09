@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Lightbulb } from "lucide-react";
 import { adapters, type GameId } from "@/lib/games/registry";
 import type { Setup } from "@/lib/content/types";
 import { CaroBoard } from "@/components/board/CaroBoard";
@@ -13,7 +14,7 @@ import type { GoState } from "@/lib/games/go/rules";
 import type { Chess, Square } from "chess.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function build(game: GameId, setup: Setup): any {
+export function build(game: GameId, setup: Setup): any {
   const a = adapters[game];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let s: any;
@@ -115,10 +116,10 @@ export function TryBoard({ game, setup, solution, hint, prompt, onSolved }: {
         {status === "idle" && <span className="text-ink-3">Chọn nước đi trên bàn.</span>}
         <span className="ml-auto flex gap-2">
           {hint && status !== "solved" && (
-            <button onClick={() => setShowHint((v) => !v)} className="rounded-lg border border-line-2 px-3 py-1.5 text-[12px] font-semibold text-ink-2 transition-all duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Gợi ý</button>
+            <button onClick={() => setShowHint((v) => !v)} className="min-h-[44px] rounded-lg border border-line-2 px-3.5 text-[12.5px] font-semibold text-ink-2 transition-[transform,color,border-color,background-color] duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Gợi ý</button>
           )}
           {status !== "idle" && (
-            <button onClick={reset} className="rounded-lg border border-line-2 px-3 py-1.5 text-[12px] font-semibold text-ink-2 transition-all duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Làm lại</button>
+            <button onClick={reset} className="min-h-[44px] rounded-lg border border-line-2 px-3.5 text-[12.5px] font-semibold text-ink-2 transition-[transform,color,border-color,background-color] duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Làm lại</button>
           )}
         </span>
       </div>
@@ -128,7 +129,7 @@ export function TryBoard({ game, setup, solution, hint, prompt, onSolved }: {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ReadOnlyBoard({ game, state }: { game: GameId; state: any }) {
+export function ReadOnlyBoard({ game, state }: { game: GameId; state: any }) {
   if (game === "caro") return <CaroBoard state={state as CaroState} disabled />;
   if (game === "chess") return <ChessBoard game={state as Chess} selected={null} targets={new Set()} disabled />;
   if (game === "xiangqi") return <XiangqiBoard state={state as XqState} selected={null} targets={new Set()} disabled />;
@@ -173,14 +174,34 @@ function InteractiveBoard({ game, state, sel, setSel, onMove, disabled }: {
 const eqMove = (a: unknown, b: unknown) =>
   typeof a === "number" && typeof b === "number" ? a === b : JSON.stringify(a) === JSON.stringify(b);
 
+export interface PuzzleBoardHandle {
+  toggleHint: () => void;
+  replay: () => void;
+  reset: () => void;
+}
+export interface PuzzleBoardMeta {
+  wrong: number;
+  finished: boolean;
+  status: "idle" | "wrong" | "busy" | "solved" | "shown";
+}
+
 /**
  * Bàn thế cờ: người giải đi nước mình, đúng thì đối thủ tự phản hồi theo chuỗi giải,
- * cho tới nước kết liễu. Sai 2 lần mở "xem lời giải" (diễn lại toàn bộ).
+ * cho tới nước kết liễu. Nước nào kết thúc ván thắng cho người giải đều tính (chiếu hết khác).
+ * Sai 2 lần mở "xem lời giải" (diễn lại toàn bộ); streak dùng autoRevealAfter=1 + onReplayDone.
  */
-export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta, onSolved }: {
+export const PuzzleBoard = forwardRef<PuzzleBoardHandle, {
   game: GameId; setup: Setup; solution: unknown[]; hint?: string; explain?: string;
-  prompt: string; meta?: string; onSolved?: () => void;
-}) {
+  prompt: string; meta?: string;
+  onSolved?: () => void;
+  onWrong?: (wrongCount: number) => void;
+  /** sau N lần sai thì tự diễn lời giải (mặc định: không tự diễn, hiện nút từ 2 lần) */
+  autoRevealAfter?: number;
+  onReplayDone?: () => void;
+  onMeta?: (m: PuzzleBoardMeta) => void;
+  /** không khung card — dùng trong solver full màn */
+  bare?: boolean;
+}>(function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta, onSolved, onWrong, autoRevealAfter, onReplayDone, onMeta, bare }, ref) {
   const base = useMemo(() => build(game, setup), [game, setup]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [state, setState] = useState<any>(base);
@@ -196,15 +217,16 @@ export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta
 
   const playerMoves = Math.ceil(solution.length / 2);
   const doneMoves = pIdx / 2;
+  const finished = status === "solved" || status === "shown";
 
-  const reset = () => {
+  const reset = useCallback(() => {
     clearTimers();
-    setState(base); setPIdx(0); setSel(null); setShowHint(false);
+    setState(base); setPIdx(0); setSel(null); setShowHint(false); setWrong(0);
     setStatus("idle");
-  };
+  }, [base]);
 
   /** diễn lại toàn bộ lời giải, không tính là đã giải */
-  const replay = () => {
+  const replay = useCallback(() => {
     clearTimers();
     setState(base); setPIdx(0); setSel(null); setShowHint(false);
     setStatus("busy");
@@ -213,14 +235,39 @@ export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta
         setState((s: unknown) => adapters[game].apply(s as never, m as never) ?? s);
       }, 350 + i * 850));
     });
-    timers.current.push(setTimeout(() => setStatus("shown"), 350 + solution.length * 850 + 500));
-  };
+    timers.current.push(setTimeout(() => {
+      setStatus("shown");
+      onReplayDone?.();
+    }, 350 + solution.length * 850 + 500));
+  }, [base, game, solution, onReplayDone]);
+
+  useImperativeHandle(ref, () => ({
+    toggleHint: () => setShowHint((v) => !v),
+    replay,
+    reset,
+  }), [replay, reset]);
+
+  useEffect(() => {
+    onMeta?.({ wrong, finished, status });
+  }, [wrong, finished, status, onMeta]);
 
   const tryMove = (m: unknown) => {
     if (status === "solved" || status === "shown" || status === "busy") return;
-    if (eqMove(m, solution[pIdx])) {
-      const next = adapters[game].apply(state, m as never);
-      if (!next) return;
+    const expected = eqMove(m, solution[pIdx]);
+    const next = expected ? adapters[game].apply(state, m as never) : null;
+    // nước khác lời giải nhưng thắng ngay cho người giải (chiếu hết khác) — vẫn tính
+    if (!expected) {
+      const alt = adapters[game].apply(state, m as never);
+      if (alt) {
+        const solverSeat = adapters[game].seatToMove(base as never);
+        if (adapters[game].result(alt as never) === solverSeat) {
+          setState(alt); setSel(null); setStatus("solved");
+          onSolved?.();
+          return;
+        }
+      }
+    }
+    if (expected && next) {
       setState(next); setSel(null);
       const ni = pIdx + 1;
       if (ni === solution.length) {
@@ -236,15 +283,19 @@ export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta
       }, 650));
     } else {
       setStatus("wrong");
-      setWrong((w) => w + 1);
-      timers.current.push(setTimeout(() => setStatus("idle"), 1300));
+      const w = wrong + 1;
+      setWrong(w);
+      onWrong?.(w);
+      if (autoRevealAfter != null && w >= autoRevealAfter) {
+        timers.current.push(setTimeout(replay, 700));
+      } else {
+        timers.current.push(setTimeout(() => setStatus("idle"), 1300));
+      }
     }
   };
 
-  const finished = status === "solved" || status === "shown";
-
-  return (
-    <figure className="my-6 rounded-2xl border border-line bg-surface p-5">
+  const inner = (
+    <>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-[14.5px] font-medium leading-[1.6]">{prompt}</p>
@@ -254,8 +305,10 @@ export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta
           {status === "solved" ? "Đã giải" : finished ? "Lời giải" : `Nước ${doneMoves + 1}/${playerMoves}`}
         </span>
       </div>
-      <div className="mx-auto max-w-[420px]">
-        <InteractiveBoard game={game} state={state} sel={sel} setSel={setSel} onMove={tryMove} disabled={finished} />
+      <div className={`mx-auto w-full max-w-[420px] rounded-xl transition-shadow duration-200 ${status === "solved" ? "shadow-[0_0_0_3px_color-mix(in_srgb,var(--vermilion)_35%,transparent)]" : ""}`}>
+        <div className={status === "wrong" ? "board-shake" : undefined}>
+          <InteractiveBoard game={game} state={state} sel={sel} setSel={setSel} onMove={tryMove} disabled={finished} />
+        </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
         {status === "solved" && <span className="font-semibold text-vermilion">Chính xác.</span>}
@@ -263,22 +316,33 @@ export function PuzzleBoard({ game, setup, solution, hint, explain, prompt, meta
         {status === "wrong" && <span className="font-medium text-ink-2">Chưa đúng — thử nước khác.</span>}
         {status === "busy" && <span className="text-ink-3">Đối thủ phản hồi…</span>}
         {status === "idle" && <span className="text-ink-3">Chọn quân rồi chọn đích trên bàn.</span>}
-        <span className="ml-auto flex gap-2">
-          {hint && !finished && (
-            <button onClick={() => setShowHint((v) => !v)} className="rounded-lg border border-line-2 px-3 py-1.5 text-[12px] font-semibold text-ink-2 transition-all duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Gợi ý</button>
-          )}
-          {wrong >= 2 && !finished && (
-            <button onClick={replay} className="rounded-lg border border-line-2 px-3 py-1.5 text-[12px] font-semibold text-ink-2 transition-all duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Xem lời giải</button>
-          )}
-          {status !== "idle" && (
-            <button onClick={reset} className="rounded-lg border border-line-2 px-3 py-1.5 text-[12px] font-semibold text-ink-2 transition-all duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Làm lại</button>
-          )}
-        </span>
+        {!bare && (
+          <span className="ml-auto flex gap-2">
+            {hint && !finished && (
+              <button onClick={() => setShowHint((v) => !v)} className="flex min-h-[44px] items-center gap-1.5 rounded-lg border border-line-2 px-3.5 text-[12.5px] font-semibold text-ink-2 transition-[transform,color,border-color,background-color] duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">
+                <Lightbulb size={14} /> Gợi ý
+              </button>
+            )}
+            {wrong >= 2 && !finished && (
+              <button onClick={replay} className="min-h-[44px] rounded-lg border border-line-2 px-3.5 text-[12.5px] font-semibold text-ink-2 transition-[transform,color,border-color,background-color] duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Xem lời giải</button>
+            )}
+            {status !== "idle" && (
+              <button onClick={reset} className="min-h-[44px] rounded-lg border border-line-2 px-3.5 text-[12.5px] font-semibold text-ink-2 transition-[transform,color,border-color,background-color] duration-150 hover:border-ink-2 hover:text-ink active:scale-[0.97]">Làm lại</button>
+            )}
+          </span>
+        )}
       </div>
-      {showHint && hint && !finished && <p className="mt-3 border-t border-line pt-3 text-[13px] text-ink-2">💡 {hint}</p>}
+      {showHint && hint && !finished && (
+        <p className="mt-3 flex gap-2 border-t border-line pt-3 text-[13px] text-ink-2">
+          <Lightbulb size={14} className="mt-0.5 shrink-0 text-vermilion" /> {hint}
+        </p>
+      )}
       {finished && explain && (
         <p className="mt-3 border-t border-line pt-3 text-[13.5px] leading-[1.7] text-ink-2">{explain}</p>
       )}
-    </figure>
+    </>
   );
-}
+
+  if (bare) return <div className="flex flex-col">{inner}</div>;
+  return <figure className="my-6 rounded-2xl border border-line bg-surface p-5">{inner}</figure>;
+});

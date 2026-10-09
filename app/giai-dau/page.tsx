@@ -105,7 +105,7 @@ function CreateForm({ onDone, onError }: { onDone: (id: number) => void; onError
     onDone(d.id);
   };
 
-  const sel = "rounded-lg border border-line-2 bg-transparent px-3 py-2 text-[13.5px] text-ink outline-none transition-colors focus:border-vermilion";
+  const sel = "rounded-lg border border-line-2 bg-transparent px-3 py-2 text-[16px] text-ink outline-none md:text-[13.5px] transition-colors focus:border-vermilion";
   return (
     <div className="mt-6 border-y border-line py-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

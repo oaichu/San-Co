@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { getLesson, lessonsByGame } from "@/lib/content/lessons";
@@ -43,7 +44,9 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
     <main className="relative min-h-screen">
       <Nav />
       <article className="mx-auto max-w-[720px] px-5 pb-24 pt-[104px]">
-        <Link href="/hoc" className="text-[13px] font-medium text-ink-2 transition-colors hover:text-ink">← Giáo trình</Link>
+        <Link href="/hoc" className="inline-flex min-h-[44px] items-center gap-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:text-ink">
+          <ArrowLeft size={15} /> Giáo trình
+        </Link>
         <h1 className="mt-4 font-display text-[clamp(30px,4.5vw,46px)] font-bold leading-[1.1] tracking-[-0.025em]">{lesson.title}</h1>
         <p className="mt-2 text-[15px] text-ink-2">{lesson.sub}</p>
         <div className="tabular mt-3 text-[12px] font-medium uppercase tracking-[0.08em] text-ink-3">
@@ -60,19 +63,20 @@ export default function LessonPage({ params }: { params: Promise<{ id: string }>
 
         <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line-2 pt-8">
           {prev ? (
-            <Link href={`/hoc/${prev.id}`} className="text-[14px] font-semibold text-ink-2 underline-offset-4 hover:text-ink hover:underline">
-              ← Bài trước: {prev.title}
+            <Link href={`/hoc/${prev.id}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-ink-2 underline-offset-4 hover:text-ink hover:underline">
+              <ArrowLeft size={15} /> Bài trước: {prev.title}
             </Link>
           ) : <span />}
           <button
             onClick={markDone}
-            className={`rounded-xl px-6 py-3 text-[14px] font-semibold transition-all duration-150 active:scale-[0.97] ${completed ? "border border-vermilion text-vermilion" : "bg-vermilion text-accent-ink hover:-translate-y-0.5"}`}
+            className={`flex min-h-[46px] items-center gap-2 rounded-xl px-6 text-[14px] font-semibold transition-all duration-150 active:scale-[0.97] ${completed ? "border border-vermilion text-vermilion" : "bg-vermilion text-accent-ink hover:-translate-y-0.5"}`}
           >
-            {completed ? "✓ Đã hoàn thành" : "Đánh dấu hoàn thành"}
+            {completed && <Check size={15} />}
+            {completed ? "Đã hoàn thành" : "Đánh dấu hoàn thành"}
           </button>
           {next ? (
-            <Link href={`/hoc/${next.id}`} className="text-[14px] font-semibold text-vermilion underline-offset-4 hover:underline">
-              Bài tiếp: {next.title} →
+            <Link href={`/hoc/${next.id}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-vermilion underline-offset-4 hover:underline">
+              Bài tiếp: {next.title} <ArrowRight size={15} />
             </Link>
           ) : <span />}
         </div>

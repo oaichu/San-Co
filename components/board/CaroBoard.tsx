@@ -31,10 +31,19 @@ export function CaroBoard({
   state,
   onCell,
   disabled,
+  hint,
+  ghost,
+  coords = false,
 }: {
   state: CaroState;
   onCell?: (idx: number) => void;
   disabled?: boolean;
+  /** ô gợi ý: quân mờ + vòng son nhấp */
+  hint?: number | null;
+  /** ô preview chạm-hai-lần: quân mờ + vòng tĩnh */
+  ghost?: number | null;
+  /** tọa độ mép bàn: chữ A–O dưới, số trái */
+  coords?: boolean;
 }) {
   const win = state.winLine;
   const winLine = win.length >= 2
@@ -78,6 +87,15 @@ export function CaroBoard({
                 {state.turn === 1 ? <MarkX faint /> : <MarkO faint />}
               </span>
             )}
+            {v === 0 && (ghost === i || hint === i) && (
+              <>
+                <span className="absolute inset-0 opacity-60">{state.turn === 1 ? <MarkX faint /> : <MarkO faint />}</span>
+                <span
+                  className={`pointer-events-none absolute inset-[9%] rounded-full border-2 border-vermilion ${hint === i ? "hint-ring" : ""}`}
+                  aria-hidden="true"
+                />
+              </>
+            )}
             {v === 1 && <MarkX />}
             {v === 2 && <MarkO />}
             {state.lastMove === i && state.winner === 0 && (
@@ -86,6 +104,30 @@ export function CaroBoard({
           </button>
         ))}
       </div>
+
+      {/* tọa độ mép: số 15→1 bên trái, chữ A–O dưới */}
+      {coords &&
+        Array.from({ length: CARO_N }, (_, r) => (
+          <span
+            key={`r${r}`}
+            className="tabular pointer-events-none absolute left-[0.9%] -translate-y-1/2 font-medium text-ink-3"
+            style={{ top: `${2.5 + ((r + 0.5) * 95) / CARO_N}%`, fontSize: "clamp(6px, 1.1vw, 9px)" }}
+            aria-hidden="true"
+          >
+            {CARO_N - r}
+          </span>
+        ))}
+      {coords &&
+        Array.from({ length: CARO_N }, (_, c) => (
+          <span
+            key={`c${c}`}
+            className="pointer-events-none absolute bottom-[0.9%] -translate-x-1/2 font-medium text-ink-3"
+            style={{ left: `${2.5 + ((c + 0.5) * 95) / CARO_N}%`, fontSize: "clamp(6px, 1.1vw, 9px)" }}
+            aria-hidden="true"
+          >
+            {String.fromCharCode(65 + c)}
+          </span>
+        ))}
 
       {/* gạch đường thắng */}
       {winLine && (

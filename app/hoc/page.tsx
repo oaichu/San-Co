@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, Check } from "lucide-react";
 import { Nav } from "@/components/Nav";
 import { LESSONS, lessonsByGame } from "@/lib/content/lessons";
 import { BoardSkin } from "@/components/board/skins";
@@ -59,7 +60,7 @@ export default function HocPage() {
             const g = lessonsByGame(t.id);
             const d = g.filter((l) => done.has(l.id)).length;
             return (
-              <button key={t.id} onClick={() => setGame(t.id)} className={`rounded-t-lg px-4 py-2.5 text-[13.5px] font-semibold transition-colors duration-150 ${t.id === game ? "bg-surface text-ink shadow-[inset_0_-2px_0_var(--vermilion)]" : "text-ink-2 hover:text-ink"}`}>
+              <button key={t.id} onClick={() => setGame(t.id)} className={`min-h-[44px] rounded-t-lg px-4 py-2.5 text-[13.5px] font-semibold transition-colors duration-150 ${t.id === game ? "bg-surface text-ink shadow-[inset_0_-2px_0_var(--vermilion)]" : "text-ink-2 hover:text-ink"}`}>
                 {t.name}
                 <span className="tabular ml-1.5 text-[11px] font-medium text-ink-3">{d}/{g.length}</span>
               </button>
@@ -74,7 +75,7 @@ export default function HocPage() {
               <span className="mt-0.5 block text-[15.5px] font-semibold text-ink group-hover:text-vermilion transition-colors duration-150">{nextLesson.title}</span>
               <span className="mt-0.5 block text-[13px] text-ink-2">{nextLesson.sub}</span>
             </span>
-            <span className="shrink-0 text-[18px] text-vermilion transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true">→</span>
+            <ArrowRight size={18} className="shrink-0 text-vermilion transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true" />
           </Link>
         )}
 
@@ -85,11 +86,15 @@ export default function HocPage() {
               <div className="min-w-0">
                 <h2 className="font-display text-[18px] font-semibold tracking-[-0.01em] transition-colors group-hover:text-vermilion">
                   {l.title}
-                  {done.has(l.id) && <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-vermilion">xong</span>}
+                  {done.has(l.id) && (
+                    <span className="ml-2 inline-flex items-center gap-1 align-middle text-[11px] font-semibold uppercase tracking-[0.06em] text-vermilion">
+                      <Check size={11} /> xong
+                    </span>
+                  )}
                 </h2>
                 <p className="mt-1 text-[13.5px] leading-[1.6] text-ink-2">{l.sub}</p>
               </div>
-              <span className="ml-auto mt-1 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-1 group-hover:text-vermilion" aria-hidden="true">→</span>
+              <ArrowRight size={17} className="ml-auto mt-1 shrink-0 text-ink-3 transition-transform duration-150 group-hover:translate-x-1 group-hover:text-vermilion" aria-hidden="true" />
             </Link>
           ))}
         </div>

@@ -23,23 +23,28 @@ app.prepare().then(() => {
     }
   });
 
-  const wss = new WebSocketServer({
-    server,
-    path: "/ws",
-    maxPayload: 16 * 1024,
-    verifyClient: (info, cb) => {
-      // chống cross-site WS hijacking: nếu có Origin thì phải cùng host
-      const origin = info.req.headers.origin;
-      if (!origin) return cb(true);
-      try {
-        cb(new URL(origin).host === info.req.headers.host);
-      } catch {
-        cb(false);
-      }
-    },
-  });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 16 * 1024 });
   wss.on("connection", (ws, req) => {
     handleWs(ws, userByToken(cookieOf(req)));
+  });
+
+  server.on("upgrade", (req, socket, head) => {
+    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+    if (url.pathname === "/ws") {
+      // chống cross-site WS hijacking: nếu có Origin thì phải cùng host
+      const origin = req.headers.origin;
+      if (origin) {
+        try {
+          if (new URL(origin).host !== req.headers.host) return socket.destroy();
+        } catch {
+          return socket.destroy();
+        }
+      }
+      wss.handleUpgrade(req, socket, head, (ws) => wss.emit("connection", ws, req));
+    } else {
+      // các upgrade khác (HMR dev…) để Next xử lý
+      app.getUpgradeHandler()(req, socket, head).catch(() => socket.destroy());
+    }
   });
 
   setInterval(sweepRooms, 10 * 60_000).unref();

@@ -86,7 +86,7 @@ export function HeroBoard() {
   return (
     <div
       ref={wrapRef}
-      className="pointer-events-none absolute right-0 top-1/2 z-[1] aspect-square w-[min(560px,46vw)] -translate-y-1/2 max-md:right-[-30vw] max-md:top-[62%] max-md:w-[88vw] max-md:opacity-60"
+      className="pointer-events-none relative z-[1] mx-auto mt-10 aspect-square w-[min(320px,74vw)] md:absolute md:right-0 md:top-1/2 md:mx-0 md:mt-0 md:w-[min(560px,46vw)] md:-translate-y-1/2"
       style={{ perspective: "1400px" }}
       aria-hidden="true"
     >
@@ -102,17 +102,6 @@ export function HeroBoard() {
           />
         ))}
       </div>
-      <style jsx>{`
-        .hero-stone {
-          position: absolute; inset: 16%; border-radius: 50%;
-          animation: stone-in 300ms cubic-bezier(0.34, 1.4, 0.64, 1);
-          box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.5);
-        }
-        .hero-stone.x { background: var(--stone-x); }
-        .hero-stone.o { background: var(--stone-o); }
-        .hero-stone.last { outline: 2px solid var(--vermilion); outline-offset: 2px; }
-        .hero-stone.win { animation: win-pop 600ms cubic-bezier(0.34, 1.4, 0.64, 1); }
-      `}</style>
     </div>
   );
 }

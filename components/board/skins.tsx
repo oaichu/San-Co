@@ -5,9 +5,9 @@ export type GameId = "caro" | "chess" | "xiangqi" | "go";
 
 export const GAMES: { id: GameId; name: string; desc: string }[] = [
   { id: "caro", name: "Cờ caro", desc: "Năm quân một đường. Luật Việt: đúng năm mới thắng, chặn hai đầu vẫn cứu được." },
-  { id: "chess", name: "Cờ vua", desc: "64 ô, AI alpha-beta chạy ngay trên máy bạn. Năm cấp độ, từ nhập môn tới cao thủ." },
-  { id: "xiangqi", name: "Cờ tướng", desc: "Vượt sông, giữ thành. Bàn cờ quen thuộc nhất của người Việt, nay có AI đủ mạnh để luyện." },
-  { id: "go", name: "Cờ vây", desc: "361 giao điểm, luật đơn giản nhất, chiều sâu lớn nhất. Học qua từng bàn 19 nhân 19 thật." },
+  { id: "chess", name: "Cờ vua", desc: "64 ô, máy chơi ngay trong trình duyệt của bạn. Năm mức độ, từ nhập môn tới cao thủ." },
+  { id: "xiangqi", name: "Cờ tướng", desc: "Vượt sông, giữ thành. Bàn cờ quen thuộc nhất của người Việt, nay có máy đủ mạnh để luyện." },
+  { id: "go", name: "Cờ vây", desc: "Luật đơn giản nhất, chiều sâu lớn nhất. Bắt đầu với bàn 9×9, lên dần 13×13 và 19×19." },
 ];
 
 /** Bàn caro 9×9 tĩnh, một thế cờ gần xong với đường thắng được tô sáng */
@@ -17,7 +17,7 @@ export function CaroSkin() {
     "4,4": "o", "4,5": "o", "5,3": "o", "2,6": "o", "5,5": "o", "6,2": "x",
   };
   return (
-    <div className="relative h-full w-full p-[5%]">
+    <div className="relative aspect-square h-full w-full p-[5%]">
       <div className="grid h-full w-full grid-cols-9">
         {Array.from({ length: 81 }, (_, i) => {
           const r = Math.floor(i / 9), c = i % 9;
@@ -31,7 +31,7 @@ export function CaroSkin() {
       </div>
       {/* đường thắng */}
       <svg className="pointer-events-none absolute inset-[5%]" viewBox="0 0 9 9" aria-hidden="true">
-        <line x1="3.5" y1="3.5" x2="3.5" y2="6.5" stroke="var(--vermilion)" strokeWidth="0.18" strokeLinecap="round" opacity="0.85" />
+        <line x1="3.5" y1="3.5" x2="6.5" y2="3.5" stroke="var(--vermilion)" strokeWidth="0.18" strokeLinecap="round" opacity="0.85" />
       </svg>
     </div>
   );
@@ -42,7 +42,7 @@ const BACK: PieceType[] = ["r", "n", "b", "q", "k", "b", "n", "r"];
 /** Bàn cờ vua 8×8 tĩnh, thế trung cuộc — cùng bộ quân SVG với bàn thật */
 export function ChessSkin() {
   return (
-    <div className="grid h-full w-full grid-cols-8 overflow-hidden rounded-lg">
+    <div className="grid aspect-square h-full w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-lg">
       {Array.from({ length: 64 }, (_, i) => {
         const r = Math.floor(i / 8), c = i % 8;
         let p: PieceType | null = null, enemy = false;
@@ -56,11 +56,14 @@ export function ChessSkin() {
         return (
           <div
             key={i}
-            className="grid place-items-center"
+            className="relative"
             style={{ background: light ? "var(--chess-l)" : "var(--chess-d)" }}
           >
             {p && (
-              <span className="block h-[86%] w-[86%]" style={{ filter: "drop-shadow(0 2px 2px rgba(20,12,4,.35))" }}>
+              <span
+                data-piece={enemy ? "b" : "w"}
+                className="chess-piece absolute inset-[7%] block"
+              >
                 <Piece t={p} c={enemy ? "b" : "w"} />
               </span>
             )}
@@ -81,7 +84,7 @@ const XQ_SETUP: Record<string, string> = {
 /** Bàn cờ tướng 9×10 tĩnh, quân tròn chữ Hán */
 export function XiangqiSkin() {
   return (
-    <div className="grid h-full w-full grid-cols-9 grid-rows-10 rounded-lg p-[4%]" style={{ background: "linear-gradient(160deg, var(--wood-1), var(--wood-2))" }}>
+    <div className="@container grid aspect-[9/10] h-full w-full grid-cols-9 grid-rows-10 rounded-lg p-[4%]" style={{ background: "linear-gradient(160deg, var(--wood-1), var(--wood-2))" }}>
       {Array.from({ length: 90 }, (_, i) => {
         const r = Math.floor(i / 9), c = i % 9;
         const ch = XQ_SETUP[`${r},${c}`];
@@ -90,9 +93,9 @@ export function XiangqiSkin() {
           <div key={i} className="relative grid place-items-center">
             {ch && (
               <span
-                className="relative grid aspect-square w-[80%] place-items-center rounded-full font-semibold"
+                className="relative grid aspect-square w-[86%] place-items-center rounded-full font-semibold"
                 style={{
-                  fontSize: "clamp(11px, 1.6vw, 17px)",
+                  fontSize: "5.3cqw",
                   color: red ? "var(--xq-red)" : "var(--xq-ink)",
                   background: "radial-gradient(circle at 36% 28%, #faf0d6 0%, #ecd9ac 62%, #d8bd8a 100%)",
                   border: `1.5px solid ${red ? "var(--xq-red)" : "var(--xq-ink)"}`,
@@ -116,7 +119,7 @@ export function GoSkin() {
     "6,7": "w", "7,6": "w", "7,7": "b", "4,4": "b", "10,10": "w", "2,10": "b",
   };
   return (
-    <div className="grid h-full w-full rounded-lg p-[4%]" style={{ gridTemplateColumns: "repeat(13, 1fr)", background: "linear-gradient(155deg, var(--wood-1), var(--wood-2))" }}>
+    <div className="grid aspect-square h-full w-full rounded-lg p-[4%]" style={{ gridTemplateColumns: "repeat(13, 1fr)", background: "linear-gradient(155deg, var(--wood-1), var(--wood-2))" }}>
       {Array.from({ length: 169 }, (_, i) => {
         const r = Math.floor(i / 13), c = i % 13;
         const s = stones[`${r},${c}`];

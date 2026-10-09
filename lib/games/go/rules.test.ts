@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { newGo, applyGoMove, scoreGo, GO_N } from "./rules";
+import { newGo, applyGoMove, scoreGo, legalGoMoves, goSize, GO_N } from "./rules";
 
 const at = (r: number, c: number) => r * GO_N + c;
+const at9 = (r: number, c: number) => r * 9 + c;
 
 describe("go rules", () => {
   it("bắt quân hết khí", () => {
@@ -57,5 +58,52 @@ describe("go rules", () => {
     const [black, white] = scoreGo(b, 0);
     expect(black).toBe(5 + 4); // 5 quân + 4 đất
     expect(white).toBe(1);
+  });
+});
+
+describe("go 9×9", () => {
+  it("newGo(9) tạo bàn 81 ô, goSize nhận đúng kích thước", () => {
+    const s = newGo(9);
+    expect(s.board).toHaveLength(81);
+    expect(goSize(s.board)).toBe(9);
+    expect(goSize(newGo(13).board)).toBe(13);
+    expect(goSize(newGo().board)).toBe(19);
+  });
+
+  it("bắt quân ở biên bàn 9×9", () => {
+    // trắng (0,4) trên biên: đen vây (0,3),(0,5),(1,4) → bắt
+    let s = newGo(9);
+    s = applyGoMove(s, at9(0, 3))!; // đen
+    s = applyGoMove(s, at9(0, 4))!; // trắng
+    s = applyGoMove(s, at9(0, 5))!; // đen
+    s = applyGoMove(s, at9(7, 7))!; // trắng đánh xa
+    s = applyGoMove(s, at9(1, 4))!; // đen bắt
+    expect(s.board[at9(0, 4)]).toBe(0);
+    expect(s.captures[0]).toBe(1);
+  });
+
+  it("tự sát bị từ chối trên 9×9", () => {
+    const b = new Array(81).fill(0);
+    b[at9(0, 1)] = b[at9(1, 0)] = b[at9(1, 2)] = b[at9(2, 1)] = 1;
+    const s = { ...newGo(9), board: b, turn: 2 as const };
+    expect(applyGoMove(s, at9(1, 1))).toBeNull();
+    expect(legalGoMoves(s)).not.toContain(at9(1, 1));
+  });
+
+  it("chấm điểm trên 9×9", () => {
+    const b = new Array(81).fill(0);
+    // đen bao góc 2×2 tại (0,0)
+    b[at9(0, 2)] = b[at9(1, 2)] = b[at9(2, 0)] = b[at9(2, 1)] = b[at9(2, 2)] = 1;
+    b[at9(7, 7)] = 2;
+    const [black, white] = scoreGo(b, 0);
+    expect(black).toBe(9); // 5 quân + 4 đất
+    expect(white).toBe(1);
+  });
+
+  it("2 pass kết thúc ván 9×9", () => {
+    let s = newGo(9);
+    s = applyGoMove(s, -1)!;
+    s = applyGoMove(s, -1)!;
+    expect(s.done).toBe(true);
   });
 });
